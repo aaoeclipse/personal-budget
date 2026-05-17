@@ -1,0 +1,8 @@
+/* Light mode body background override */
+:root[data-mantine-color-scheme="light"] {
+  --mantine-color-body: #FFF9F0;
+}
+
+:root[data-mantine-color-scheme="dark"] {
+  --mantine-color-body: #1A1B1E;
+}

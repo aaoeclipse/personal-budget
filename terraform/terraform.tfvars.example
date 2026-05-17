@@ -1,0 +1,12 @@
+aws_region        = "us-east-1"
+project_name      = "mama-budget"
+environment       = "prod"
+db_instance_class = "db.t4g.micro"
+backend_cpu       = 256
+backend_memory    = 512
+backend_image_tag = "latest"
+
+# Custom domain (requires Route53 hosted zone)
+domain_name         = "santiagopaiz.com"
+frontend_subdomain  = "mamabudget"
+backend_subdomain   = "api.mamabudget"
