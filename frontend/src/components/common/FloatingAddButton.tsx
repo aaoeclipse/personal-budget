@@ -23,7 +23,7 @@ export function FloatingAddButton() {
       <Box
         style={{
           position: 'fixed',
-          bottom: 80,
+          bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
           right: 20,
           zIndex: 100,
         }}

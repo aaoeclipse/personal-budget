@@ -21,7 +21,11 @@ export function AppLayout() {
       styles={{
         main: {
           backgroundColor: 'var(--mantine-color-body)',
-          minHeight: '100vh',
+          minHeight: '100dvh',
+          paddingBottom: isMobile ? 'calc(60px + env(safe-area-inset-bottom, 0px) + var(--mantine-spacing-md))' : undefined,
+        },
+        footer: {
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         },
       }}
     >
