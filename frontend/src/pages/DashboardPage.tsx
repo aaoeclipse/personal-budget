@@ -3,9 +3,9 @@ import { useMediaQuery } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '../api/dashboard';
 import { BudgetAlertsBanner } from '../components/dashboard/BudgetAlertsBanner';
+import { BudgetComparisonChart } from '../components/dashboard/MonthlySpendingChart';
 import { BudgetOverviewCard } from '../components/dashboard/BudgetOverviewCard';
 import { InvitationsBanner } from '../components/dashboard/InvitationsBanner';
-import { MonthlySpendingChart } from '../components/dashboard/MonthlySpendingChart';
 import { RecentExpensesList } from '../components/dashboard/RecentExpensesList';
 import { SpendingByCategoryChart } from '../components/dashboard/SpendingByCategoryChart';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
@@ -18,6 +18,17 @@ export function DashboardPage() {
   const { data, isLoading } = useQuery({ queryKey: ['dashboard'], queryFn: dashboardApi.get });
 
   if (isLoading) return <LoadingSpinner />;
+
+  // Calculate this month's spending from recent expenses (approximate)
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const monthlySpent = data?.recent_expenses
+    ?.filter((e) => {
+      const d = new Date(e.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    })
+    .reduce((sum, e) => sum + Number(e.amount), 0) ?? 0;
 
   return (
     <Stack gap={isMobile ? 'sm' : 'md'}>
@@ -35,7 +46,15 @@ export function DashboardPage() {
                 Spent (30d)
               </Text>
               <Text size={isMobile ? 'md' : 'xl'} fw={700} c="coral">
-                {formatCurrency(data.total_spent)}
+                {formatCurrency(Number(data.total_spent))}
+              </Text>
+            </Card>
+            <Card shadow="xs" padding={isMobile ? 'xs' : 'md'} radius="md" withBorder>
+              <Text size="xs" c="dimmed">
+                This Month
+              </Text>
+              <Text size={isMobile ? 'md' : 'xl'} fw={700} c="orange">
+                {formatCurrency(monthlySpent)}
               </Text>
             </Card>
             <Card shadow="xs" padding={isMobile ? 'xs' : 'md'} radius="md" withBorder>
@@ -46,18 +65,12 @@ export function DashboardPage() {
                 {data.active_budgets.length}
               </Text>
             </Card>
-            <Card shadow="xs" padding={isMobile ? 'xs' : 'md'} radius="md" withBorder>
-              <Text size="xs" c="dimmed">
-                Categories
-              </Text>
-              <Text size={isMobile ? 'md' : 'xl'} fw={700}>
-                {data.spending_by_category.length}
-              </Text>
-            </Card>
           </SimpleGrid>
 
           {data.active_budgets.length > 0 && (
             <>
+              <BudgetComparisonChart budgets={data.active_budgets} />
+
               <Title order={4}>Active Budgets</Title>
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                 {data.active_budgets.map((b) => (
@@ -66,8 +79,6 @@ export function DashboardPage() {
               </SimpleGrid>
             </>
           )}
-
-          <MonthlySpendingChart />
 
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
             <SpendingByCategoryChart data={data.spending_by_category} />
