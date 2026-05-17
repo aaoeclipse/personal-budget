@@ -33,7 +33,7 @@ export function RecentExpensesList({ expenses }: RecentExpensesListProps) {
               </Group>
             </div>
             <Text size="sm" fw={600} c="coral" style={{ flexShrink: 0 }}>
-              {formatCurrency(exp.amount)}
+              {formatCurrency(exp.amount, exp.currency)}
             </Text>
           </Group>
         ))}

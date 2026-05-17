@@ -190,7 +190,7 @@ export function ExpensesPage() {
                 </Group>
                 <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
                   <Text size="sm" fw={700} c="coral">
-                    {formatCurrency(exp.amount)}
+                    {formatCurrency(exp.amount, exp.currency)}
                   </Text>
                   <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => { setEditing(exp); setFormOpen(true); }}>
                     <IconEdit size={14} />
@@ -243,7 +243,7 @@ export function ExpensesPage() {
                     )}
                     <Table.Td ta="right">
                       <Text size="sm" fw={600}>
-                        {formatCurrency(exp.amount)}
+                        {formatCurrency(exp.amount, exp.currency)}
                       </Text>
                     </Table.Td>
                     <Table.Td>

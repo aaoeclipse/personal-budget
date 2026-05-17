@@ -27,6 +27,7 @@ def _expense_to_response(exp) -> ExpenseResponse:
         budget_id=exp.budget_id,
         category_id=exp.category_id,
         amount=exp.amount,
+        currency=getattr(exp, "currency", "USD"),
         description=exp.description,
         date=exp.date,
         created_at=exp.created_at,
@@ -79,7 +80,7 @@ def export_expenses_csv(
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Date", "Description", "Category", "Amount", "Budget", "Added By"])
+    writer.writerow(["Date", "Description", "Category", "Amount", "Currency", "Budget", "Added By"])
 
     for exp in items:
         writer.writerow([
@@ -87,6 +88,7 @@ def export_expenses_csv(
             exp.description,
             exp.category.name if exp.category else "",
             f"{exp.amount:.2f}",
+            getattr(exp, "currency", "USD"),
             exp.budget.name if exp.budget else "",
             exp.user.name if exp.user else "",
         ])
