@@ -34,6 +34,7 @@ class ExpenseResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     category: Optional[CategoryResponse] = None
+    creator_name: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

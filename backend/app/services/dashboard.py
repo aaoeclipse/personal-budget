@@ -2,10 +2,11 @@ import uuid
 from datetime import date, timedelta
 from decimal import Decimal
 
-from sqlalchemy import extract, func, select
+from sqlalchemy import extract, func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.budget import Budget
+from app.models.budget_member import BudgetMember
 from app.models.category import Category
 from app.models.expense import Expense
 from app.schemas.budget import BudgetDetailResponse
@@ -15,10 +16,17 @@ from app.schemas.dashboard import DailySpending, DashboardResponse, MonthlySpend
 def get_dashboard(db: Session, user_id: uuid.UUID) -> DashboardResponse:
     today = date.today()
 
-    # Active budgets with spending
+    # Active budgets: owned OR member of
     active_budgets_rows = list(
         db.execute(
-            select(Budget).where(Budget.user_id == user_id, Budget.start_date <= today, Budget.end_date >= today)
+            select(Budget).where(
+                or_(
+                    Budget.user_id == user_id,
+                    Budget.id.in_(select(BudgetMember.budget_id).where(BudgetMember.user_id == user_id)),
+                ),
+                Budget.start_date <= today,
+                Budget.end_date >= today,
+            )
         ).scalars().all()
     )
     active_budgets: list[BudgetDetailResponse] = []
@@ -28,9 +36,16 @@ def get_dashboard(db: Session, user_id: uuid.UUID) -> DashboardResponse:
                 select(func.coalesce(func.sum(Expense.amount), 0)).where(Expense.budget_id == b.id)
             ).scalar_one()
         ))
+        role = "owner" if b.user_id == user_id else "editor"
+        member_count = 1
+        if b.is_shared:
+            member_count = db.execute(
+                select(func.count(BudgetMember.id)).where(BudgetMember.budget_id == b.id)
+            ).scalar_one() or 1
         active_budgets.append(BudgetDetailResponse(
             id=b.id, name=b.name, amount=b.amount,
             start_date=b.start_date, end_date=b.end_date,
+            is_shared=b.is_shared, role=role, member_count=member_count,
             created_at=b.created_at, updated_at=b.updated_at,
             total_spent=spent, remaining=Decimal(str(b.amount)) - spent,
         ))

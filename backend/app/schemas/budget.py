@@ -26,6 +26,9 @@ class BudgetResponse(BaseModel):
     amount: Decimal
     start_date: date
     end_date: date
+    is_shared: bool = False
+    role: Optional[str] = None
+    member_count: int = 0
     created_at: datetime
     updated_at: datetime
 
