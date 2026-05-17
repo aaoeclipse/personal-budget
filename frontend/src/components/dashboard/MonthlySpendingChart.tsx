@@ -1,5 +1,5 @@
-import { Card, Stack, Text } from '@mantine/core';
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Card, Group, Progress, Select, Stack, Text } from '@mantine/core';
+import { useState } from 'react';
 import type { BudgetDetail } from '../../types/budget';
 import { formatCurrency } from '../../utils/formatCurrency';
 
@@ -8,29 +8,61 @@ interface BudgetComparisonChartProps {
 }
 
 export function BudgetComparisonChart({ budgets }: BudgetComparisonChartProps) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
   if (!budgets || budgets.length === 0) return null;
 
-  const chartData = budgets.map((b) => ({
-    name: b.name.length > 12 ? b.name.slice(0, 12) + '…' : b.name,
-    Budget: Number(b.amount),
-    Spent: Number(b.total_spent),
-  }));
+  const selected = selectedId
+    ? budgets.find((b) => b.id === selectedId) ?? null
+    : null;
+
+  // If a specific budget is selected, show detailed view
+  const displayBudgets = selected ? [selected] : budgets;
 
   return (
     <Card shadow="xs" padding="md" radius="md" withBorder>
       <Stack gap="sm">
-        <Text fw={600}>Budget vs Spent</Text>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={chartData} barGap={2}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
-            <Tooltip formatter={(value: number) => formatCurrency(value)} />
-            <Legend />
-            <Bar dataKey="Budget" fill="#4CAF50" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="Spent" fill="#FF6B6B" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        <Group justify="space-between" align="center">
+          <Text fw={600}>Budget vs Spent</Text>
+          <Select
+            placeholder="All budgets"
+            data={budgets.map((b) => ({ value: b.id, label: b.name }))}
+            value={selectedId}
+            onChange={setSelectedId}
+            clearable
+            size="xs"
+            w={160}
+          />
+        </Group>
+
+        <Stack gap="md">
+          {displayBudgets.map((b) => {
+            const pct = b.amount > 0 ? (b.total_spent / b.amount) * 100 : 0;
+            const color = pct >= 100 ? 'red' : pct >= 75 ? 'orange' : 'teal';
+
+            return (
+              <Stack key={b.id} gap={4}>
+                <Group justify="space-between">
+                  <Text size="sm" fw={500}>{b.name}</Text>
+                  <Text size="sm" fw={600} c={color}>{Math.round(pct)}%</Text>
+                </Group>
+                <Progress.Root size="xl" radius="xl">
+                  <Progress.Section value={Math.min(pct, 100)} color={color}>
+                    <Progress.Label>{formatCurrency(b.total_spent)}</Progress.Label>
+                  </Progress.Section>
+                </Progress.Root>
+                <Group justify="space-between">
+                  <Text size="xs" c="dimmed">
+                    {formatCurrency(b.total_spent)} / {formatCurrency(b.amount)}
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    {formatCurrency(b.total_spent_gtq, 'GTQ')} / {formatCurrency(b.amount_gtq, 'GTQ')}
+                  </Text>
+                </Group>
+              </Stack>
+            );
+          })}
+        </Stack>
       </Stack>
     </Card>
   );

@@ -13,7 +13,9 @@ export interface Budget {
 
 export interface BudgetDetail extends Budget {
   total_spent: number;
+  total_spent_gtq: number;
   remaining: number;
+  amount_gtq: number;
 }
 
 export interface BudgetCreate {

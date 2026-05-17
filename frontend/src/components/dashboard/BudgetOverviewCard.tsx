@@ -44,9 +44,14 @@ export function BudgetOverviewCard({ budget }: BudgetOverviewCardProps) {
             {budget.remaining < 0 ? '-' : ''}{formatCurrency(Math.abs(budget.remaining))} {budget.remaining < 0 ? 'over' : 'left'}
           </Text>
         </Group>
-        <Text size="xs" c="dimmed" ta="right">
-          {Math.round(pct)}% used
-        </Text>
+        <Group justify="space-between">
+          <Text size="xs" c="dimmed">
+            {formatCurrency(budget.total_spent_gtq, 'GTQ')} of {formatCurrency(budget.amount_gtq, 'GTQ')}
+          </Text>
+          <Text size="xs" c="dimmed">
+            {Math.round(pct)}% used
+          </Text>
+        </Group>
       </Stack>
     </Card>
   );
