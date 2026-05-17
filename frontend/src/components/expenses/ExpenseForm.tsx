@@ -31,16 +31,22 @@ import { formatCurrency } from '../../utils/formatCurrency';
 import { getCategoryEmoji, EMOJI_OPTIONS } from '../../utils/categoryEmojis';
 
 interface BudgetRemainingInfoProps {
-  budgetDetail: { amount: number; total_spent: number; remaining: number; name: string };
+  budgetDetail: { amount: number; amount_gtq?: number; total_spent: number; total_spent_gtq?: number; remaining: number; name: string };
   currentAmount: number;
+  currentCurrency: Currency;
 }
 
-function BudgetRemainingInfo({ budgetDetail, currentAmount }: BudgetRemainingInfoProps) {
-  const remainingAfter = budgetDetail.remaining - currentAmount;
+function BudgetRemainingInfo({ budgetDetail, currentAmount, currentCurrency }: BudgetRemainingInfoProps) {
+  // Convert currentAmount to USD for the budget comparison
+  const amountInUsd = currentCurrency === 'GTQ' ? currentAmount / 7.7 : currentAmount;
+  const remainingAfter = budgetDetail.remaining - amountInUsd;
   const pctUsed = budgetDetail.amount > 0
-    ? ((budgetDetail.total_spent + currentAmount) / budgetDetail.amount) * 100
+    ? ((budgetDetail.total_spent + amountInUsd) / budgetDetail.amount) * 100
     : 0;
   const color = pctUsed >= 100 ? 'red' : pctUsed >= 75 ? 'yellow' : 'teal';
+
+  const spentUsd = budgetDetail.total_spent + amountInUsd;
+  const spentGtq = spentUsd * 7.7;
 
   return (
     <Stack gap={4} p="xs" style={{ borderRadius: 8, border: '1px solid var(--mantine-color-gray-3)' }}>
@@ -53,12 +59,15 @@ function BudgetRemainingInfo({ budgetDetail, currentAmount }: BudgetRemainingInf
       <Progress value={Math.min(pctUsed, 100)} color={color} size="sm" radius="xl" />
       <Group justify="space-between">
         <Text size="xs" c="dimmed">
-          {formatCurrency(budgetDetail.total_spent + currentAmount)} of {formatCurrency(budgetDetail.amount)}
+          {formatCurrency(spentUsd)} of {formatCurrency(budgetDetail.amount)}
         </Text>
         <Text size="xs" c="dimmed">
           {Math.round(pctUsed)}%
         </Text>
       </Group>
+      <Text size="xs" c="dimmed">
+        {formatCurrency(spentGtq, 'GTQ')} of {formatCurrency(budgetDetail.amount_gtq ?? budgetDetail.amount * 7.7, 'GTQ')}
+      </Text>
     </Stack>
   );
 }
@@ -244,6 +253,7 @@ export function ExpenseForm({ opened, onClose, onSubmit, loading, initial, categ
             <BudgetRemainingInfo
               budgetDetail={budgetDetail}
               currentAmount={Number(amount) || 0}
+              currentCurrency={currency}
             />
           )}
           <Button onClick={handleSubmit} loading={loading} color="coral" size="md">
@@ -465,6 +475,7 @@ export function ExpenseForm({ opened, onClose, onSubmit, loading, initial, categ
                     <BudgetRemainingInfo
                       budgetDetail={budgetDetail}
                       currentAmount={Number(amount) || 0}
+                      currentCurrency={currency}
                     />
                   )}
                 </>

@@ -283,8 +283,9 @@ export function ExpensesPage() {
       )}
 
       <ExpenseForm
+        key={editing?.id ?? 'new'}
         opened={formOpen}
-        onClose={() => setFormOpen(false)}
+        onClose={() => { setFormOpen(false); setEditing(undefined); }}
         initial={editing}
         categories={categories}
         budgets={budgets}
@@ -295,6 +296,7 @@ export function ExpensesPage() {
             : createMutation.mutateAsync(data);
           mutation.then(() => {
             setFormOpen(false);
+            setEditing(undefined);
             notifications.show({ message: editing ? 'Expense updated' : 'Expense added', color: 'green' });
           }).catch(() => notifications.show({ title: 'Error', message: 'Something went wrong', color: 'red' }));
         }}
