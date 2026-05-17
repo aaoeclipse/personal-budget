@@ -1,5 +1,5 @@
+import datetime as dt
 import uuid
-from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 
@@ -14,7 +14,7 @@ class ExpenseCreate(BaseModel):
     amount: Decimal
     currency: str = "USD"
     description: Optional[str] = None
-    date: date
+    date: dt.date
 
     @field_validator("currency")
     @classmethod
@@ -30,7 +30,7 @@ class ExpenseUpdate(BaseModel):
     amount: Optional[Decimal] = None
     currency: Optional[str] = None
     description: Optional[str] = None
-    date: Optional[date] = None
+    date: Optional[dt.date] = None
 
     @field_validator("currency")
     @classmethod
@@ -47,9 +47,9 @@ class ExpenseResponse(BaseModel):
     amount: Decimal
     currency: str = "USD"
     description: str
-    date: date
-    created_at: datetime
-    updated_at: datetime
+    date: dt.date
+    created_at: dt.datetime
+    updated_at: dt.datetime
     category: Optional[CategoryResponse] = None
     creator_name: Optional[str] = None
 
