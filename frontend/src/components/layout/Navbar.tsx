@@ -26,7 +26,7 @@ export function Navbar() {
     <Stack justify="space-between" h="100%">
       <div>
         <Text fw={800} size="xl" c="coral" mb="lg" px="md" pt="md">
-          Mama Budget
+          Personal Budget
         </Text>
         {links.map((link) => (
           <NavLink

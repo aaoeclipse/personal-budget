@@ -29,7 +29,7 @@ export function LoginPage() {
       <Card shadow="md" radius="lg" p="xl" w={400} withBorder>
         <Stack>
           <Title order={2} ta="center" c="coral">
-            Mama Budget
+            Personal Budget
           </Title>
           <Text c="dimmed" ta="center" size="sm">
             Sign in to manage your budget
