@@ -1,4 +1,5 @@
 import { Button, Group, SimpleGrid, Title } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { IconPlus } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
@@ -13,6 +14,7 @@ import { budgetsApi } from '../api/budgets';
 import type { BudgetDetail } from '../types/budget';
 
 export function BudgetsPage() {
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const { data: budgets, isLoading } = useBudgets();
   const createMutation = useCreateBudget();
   const updateMutation = useUpdateBudget();
@@ -38,9 +40,9 @@ export function BudgetsPage() {
   return (
     <>
       <Group justify="space-between" mb="md">
-        <Title order={2}>Budgets</Title>
-        <Button leftSection={<IconPlus size={16} />} color="coral" onClick={() => { setEditing(undefined); setFormOpen(true); }}>
-          New Budget
+        <Title order={2} size={isMobile ? 'h3' : 'h2'}>Budgets</Title>
+        <Button leftSection={<IconPlus size={16} />} color="coral" size={isMobile ? 'sm' : 'md'} onClick={() => { setEditing(undefined); setFormOpen(true); }}>
+          {isMobile ? 'New' : 'New Budget'}
         </Button>
       </Group>
 

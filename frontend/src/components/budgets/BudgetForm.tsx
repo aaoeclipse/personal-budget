@@ -1,5 +1,6 @@
-import { Button, Modal, NumberInput, Stack, TextInput } from '@mantine/core';
+import { Button, Drawer, Modal, NumberInput, Stack, TextInput } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
+import { useMediaQuery } from '@mantine/hooks';
 import { useState } from 'react';
 import type { Budget, BudgetCreate } from '../../types/budget';
 
@@ -12,6 +13,7 @@ interface BudgetFormProps {
 }
 
 export function BudgetForm({ opened, onClose, onSubmit, loading, initial }: BudgetFormProps) {
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const [name, setName] = useState(initial?.name ?? '');
   const [amount, setAmount] = useState<number | string>(initial?.amount ?? '');
   const [startDate, setStartDate] = useState<Date | null>(
@@ -32,37 +34,56 @@ export function BudgetForm({ opened, onClose, onSubmit, loading, initial }: Budg
     });
   };
 
+  const formContent = (
+    <form onSubmit={handleSubmit}>
+      <Stack>
+        <TextInput label="Name" required value={name} onChange={(e) => setName(e.target.value)} />
+        <NumberInput
+          label="Amount"
+          required
+          min={0}
+          decimalScale={2}
+          prefix="$"
+          value={amount}
+          onChange={setAmount}
+        />
+        <DateInput
+          label="Start Date"
+          required
+          value={startDate}
+          onChange={setStartDate}
+        />
+        <DateInput
+          label="End Date"
+          required
+          value={endDate}
+          onChange={setEndDate}
+        />
+        <Button type="submit" loading={loading} color="coral" fullWidth>
+          {initial ? 'Update' : 'Create'} Budget
+        </Button>
+      </Stack>
+    </form>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer
+        opened={opened}
+        onClose={onClose}
+        title={initial ? 'Edit Budget' : 'New Budget'}
+        position="bottom"
+        size="auto"
+        styles={{ content: { borderTopLeftRadius: 16, borderTopRightRadius: 16 } }}
+      >
+        {formContent}
+      </Drawer>
+    );
+  }
+
   return (
     <Modal opened={opened} onClose={onClose} title={initial ? 'Edit Budget' : 'New Budget'} centered>
-      <form onSubmit={handleSubmit}>
-        <Stack>
-          <TextInput label="Name" required value={name} onChange={(e) => setName(e.target.value)} />
-          <NumberInput
-            label="Amount"
-            required
-            min={0}
-            decimalScale={2}
-            prefix="$"
-            value={amount}
-            onChange={setAmount}
-          />
-          <DateInput
-            label="Start Date"
-            required
-            value={startDate}
-            onChange={setStartDate}
-          />
-          <DateInput
-            label="End Date"
-            required
-            value={endDate}
-            onChange={setEndDate}
-          />
-          <Button type="submit" loading={loading} color="coral">
-            {initial ? 'Update' : 'Create'} Budget
-          </Button>
-        </Stack>
-      </form>
+      {formContent}
     </Modal>
   );
 }

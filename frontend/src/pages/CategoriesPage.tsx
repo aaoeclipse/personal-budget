@@ -8,6 +8,7 @@ import {
   Text,
   Title,
 } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { IconEdit, IconPlus, IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
@@ -20,6 +21,7 @@ import type { Category, CategoryCreate } from '../types/category';
 import { getCategoryEmoji } from '../utils/categoryEmojis';
 
 export function CategoriesPage() {
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const { data: categories, isLoading } = useCategories();
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory();
@@ -34,9 +36,9 @@ export function CategoriesPage() {
   return (
     <Stack>
       <Group justify="space-between">
-        <Title order={2}>Categories</Title>
-        <Button leftSection={<IconPlus size={16} />} color="coral" onClick={() => { setEditing(undefined); setFormOpen(true); }}>
-          New Category
+        <Title order={2} size={isMobile ? 'h3' : 'h2'}>Categories</Title>
+        <Button leftSection={<IconPlus size={16} />} color="coral" size={isMobile ? 'sm' : 'md'} onClick={() => { setEditing(undefined); setFormOpen(true); }}>
+          {isMobile ? 'New' : 'New Category'}
         </Button>
       </Group>
 
@@ -51,23 +53,21 @@ export function CategoriesPage() {
           }
         />
       ) : (
-        <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
+        <SimpleGrid cols={{ base: 2, sm: 2, md: 3 }} spacing="sm">
           {categories?.map((cat) => (
-            <Card key={cat.id} shadow="xs" padding="md" radius="md" withBorder>
-              <Group justify="space-between">
-                <Group>
-                  <Text size="xl">{getCategoryEmoji(cat)}</Text>
-                  <Text fw={500}>{cat.name}</Text>
-                </Group>
+            <Card key={cat.id} shadow="xs" padding="sm" radius="md" withBorder>
+              <Stack gap={4} align="center">
+                <Text size="xl">{getCategoryEmoji(cat)}</Text>
+                <Text fw={500} size="sm" ta="center" truncate w="100%">{cat.name}</Text>
                 <Group gap={4}>
-                  <ActionIcon variant="subtle" color="gray" onClick={() => { setEditing(cat); setFormOpen(true); }}>
-                    <IconEdit size={16} />
+                  <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => { setEditing(cat); setFormOpen(true); }}>
+                    <IconEdit size={14} />
                   </ActionIcon>
-                  <ActionIcon variant="subtle" color="red" onClick={() => setDeleting(cat.id)}>
-                    <IconTrash size={16} />
+                  <ActionIcon variant="subtle" color="red" size="sm" onClick={() => setDeleting(cat.id)}>
+                    <IconTrash size={14} />
                   </ActionIcon>
                 </Group>
-              </Group>
+              </Stack>
             </Card>
           ))}
         </SimpleGrid>

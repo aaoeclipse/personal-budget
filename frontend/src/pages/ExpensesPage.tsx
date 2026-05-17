@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Badge,
-  Box,
   Button,
   Card,
   Group,
@@ -71,34 +70,60 @@ export function ExpensesPage() {
   return (
     <Stack>
       <Group justify="space-between">
-        <Title order={2}>Expenses</Title>
-        <Group gap="sm">
-          <Button
-            variant="light"
-            leftSection={<IconDownload size={16} />}
-            color="teal"
-            onClick={() => {
-              expensesApi.exportCsv({
-                category_id: categoryId || undefined,
-                budget_id: budgetId || undefined,
-                start_date: startDate?.toISOString().split('T')[0],
-                end_date: endDate?.toISOString().split('T')[0],
-                search: search || undefined,
-                min_amount: minAmount ? Number(minAmount) : undefined,
-                max_amount: maxAmount ? Number(maxAmount) : undefined,
-              }).then(() => {
-                notifications.show({ message: 'Expenses exported', color: 'green' });
-              }).catch(() => {
-                notifications.show({ title: 'Error', message: 'Could not export', color: 'red' });
-              });
-            }}
-          >
-            Export CSV
-          </Button>
-          {!isMobile && (
-            <Button leftSection={<IconPlus size={16} />} color="coral" onClick={() => { setEditing(undefined); setFormOpen(true); }}>
-              Add Expense
-            </Button>
+        <Title order={2} size={isMobile ? 'h3' : 'h2'}>Expenses</Title>
+        <Group gap="xs">
+          {isMobile ? (
+            <ActionIcon
+              variant="light"
+              color="teal"
+              size="lg"
+              onClick={() => {
+                expensesApi.exportCsv({
+                  category_id: categoryId || undefined,
+                  budget_id: budgetId || undefined,
+                  start_date: startDate?.toISOString().split('T')[0],
+                  end_date: endDate?.toISOString().split('T')[0],
+                  search: search || undefined,
+                  min_amount: minAmount ? Number(minAmount) : undefined,
+                  max_amount: maxAmount ? Number(maxAmount) : undefined,
+                }).then(() => {
+                  notifications.show({ message: 'Expenses exported', color: 'green' });
+                }).catch(() => {
+                  notifications.show({ title: 'Error', message: 'Could not export', color: 'red' });
+                });
+              }}
+              title="Export CSV"
+            >
+              <IconDownload size={18} />
+            </ActionIcon>
+          ) : (
+            <>
+              <Button
+                variant="light"
+                leftSection={<IconDownload size={16} />}
+                color="teal"
+                onClick={() => {
+                  expensesApi.exportCsv({
+                    category_id: categoryId || undefined,
+                    budget_id: budgetId || undefined,
+                    start_date: startDate?.toISOString().split('T')[0],
+                    end_date: endDate?.toISOString().split('T')[0],
+                    search: search || undefined,
+                    min_amount: minAmount ? Number(minAmount) : undefined,
+                    max_amount: maxAmount ? Number(maxAmount) : undefined,
+                  }).then(() => {
+                    notifications.show({ message: 'Expenses exported', color: 'green' });
+                  }).catch(() => {
+                    notifications.show({ title: 'Error', message: 'Could not export', color: 'red' });
+                  });
+                }}
+              >
+                Export CSV
+              </Button>
+              <Button leftSection={<IconPlus size={16} />} color="coral" onClick={() => { setEditing(undefined); setFormOpen(true); }}>
+                Add Expense
+              </Button>
+            </>
           )}
         </Group>
       </Group>
@@ -242,29 +267,6 @@ export function ExpensesPage() {
         <Group justify="center">
           <Pagination total={totalPages} value={page} onChange={setPage} color="coral" size="sm" />
         </Group>
-      )}
-
-      {/* FAB for mobile */}
-      {isMobile && (
-        <Box
-          style={{
-            position: 'fixed',
-            bottom: 80,
-            right: 20,
-            zIndex: 100,
-          }}
-        >
-          <ActionIcon
-            size={56}
-            radius="xl"
-            color="coral"
-            variant="filled"
-            onClick={() => { setEditing(undefined); setFormOpen(true); }}
-            style={{ boxShadow: '0 4px 12px rgba(255, 107, 107, 0.4)' }}
-          >
-            <IconPlus size={24} />
-          </ActionIcon>
-        </Box>
       )}
 
       <ExpenseForm

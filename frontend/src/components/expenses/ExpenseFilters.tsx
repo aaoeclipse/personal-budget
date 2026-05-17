@@ -1,6 +1,7 @@
-import { Group, NumberInput, Select, Stack, TextInput } from '@mantine/core';
+import { ActionIcon, Collapse, Group, NumberInput, Select, SimpleGrid, Stack, TextInput } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
-import { IconSearch } from '@tabler/icons-react';
+import { useDisclosure, useMediaQuery } from '@mantine/hooks';
+import { IconFilter, IconSearch } from '@tabler/icons-react';
 import type { Category } from '../../types/category';
 import type { Budget } from '../../types/budget';
 
@@ -41,16 +42,14 @@ export function ExpenseFilterBar({
   onMinAmountChange,
   onMaxAmountChange,
 }: ExpenseFiltersProps) {
-  return (
-    <Stack gap="sm" mb="md">
-      <TextInput
-        placeholder="Search expenses..."
-        leftSection={<IconSearch size={16} />}
-        value={search}
-        onChange={(e) => onSearchChange(e.currentTarget.value)}
-        size="sm"
-      />
-      <Group grow wrap="wrap">
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const [filtersOpen, { toggle }] = useDisclosure(false);
+
+  const hasActiveFilters = !!(categoryId || budgetId || startDate || endDate || minAmount || maxAmount);
+
+  const filterFields = (
+    <Stack gap="xs">
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
         <Select
           placeholder="All categories"
           data={categories.map((c) => ({ value: c.id, label: c.name }))}
@@ -67,6 +66,8 @@ export function ExpenseFilterBar({
           clearable
           size="sm"
         />
+      </SimpleGrid>
+      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
         <DateInput
           placeholder="From"
           value={startDate}
@@ -81,10 +82,8 @@ export function ExpenseFilterBar({
           clearable
           size="sm"
         />
-      </Group>
-      <Group grow wrap="wrap">
         <NumberInput
-          placeholder="Min amount"
+          placeholder="Min $"
           value={minAmount === '' ? '' : Number(minAmount)}
           onChange={(v) => onMinAmountChange(v === '' ? '' : String(v))}
           min={0}
@@ -93,7 +92,7 @@ export function ExpenseFilterBar({
           prefix="$"
         />
         <NumberInput
-          placeholder="Max amount"
+          placeholder="Max $"
           value={maxAmount === '' ? '' : Number(maxAmount)}
           onChange={(v) => onMaxAmountChange(v === '' ? '' : String(v))}
           min={0}
@@ -101,7 +100,39 @@ export function ExpenseFilterBar({
           size="sm"
           prefix="$"
         />
+      </SimpleGrid>
+    </Stack>
+  );
+
+  return (
+    <Stack gap="xs" mb="md">
+      <Group gap="xs">
+        <TextInput
+          placeholder="Search expenses..."
+          leftSection={<IconSearch size={16} />}
+          value={search}
+          onChange={(e) => onSearchChange(e.currentTarget.value)}
+          size="sm"
+          style={{ flex: 1 }}
+        />
+        {isMobile && (
+          <ActionIcon
+            variant={hasActiveFilters ? 'filled' : 'light'}
+            color={hasActiveFilters ? 'coral' : 'gray'}
+            size="lg"
+            onClick={toggle}
+          >
+            <IconFilter size={18} />
+          </ActionIcon>
+        )}
       </Group>
+      {isMobile ? (
+        <Collapse in={filtersOpen}>
+          {filterFields}
+        </Collapse>
+      ) : (
+        filterFields
+      )}
     </Stack>
   );
 }
