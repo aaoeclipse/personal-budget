@@ -69,7 +69,7 @@ jobs:
 
       - name: Build frontend
         env:
-          VITE_API_URL: https://api.mamabudget.santiagopaiz.com
+          VITE_API_URL: https://api.budget.santiagopaiz.com
         run: cd frontend && npm run build
 
       - name: Configure AWS credentials

@@ -40,13 +40,13 @@ variable "domain_name" {
 }
 
 variable "frontend_subdomain" {
-  description = "Subdomain for the frontend (e.g., mamabudget)"
+  description = "Subdomain for the frontend (e.g., budget)"
   type        = string
-  default     = "mamabudget"
+  default     = "budget"
 }
 
 variable "backend_subdomain" {
-  description = "Subdomain for the backend API (e.g., api.mamabudget)"
+  description = "Subdomain for the backend API (e.g., api.budget)"
   type        = string
-  default     = "api.mamabudget"
+  default     = "api.budget"
 }

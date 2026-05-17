@@ -13,8 +13,8 @@ on:
 env:
   AWS_REGION: us-east-1
   TF_VAR_domain_name: santiagopaiz.com
-  TF_VAR_frontend_subdomain: mamabudget
-  TF_VAR_backend_subdomain: api.mamabudget
+  TF_VAR_frontend_subdomain: budget
+  TF_VAR_backend_subdomain: api.budget
 
 permissions:
   id-token: write

@@ -8,5 +8,5 @@ backend_image_tag = "latest"
 
 # Custom domain (requires Route53 hosted zone)
 domain_name         = "santiagopaiz.com"
-frontend_subdomain  = "mamabudget"
-backend_subdomain   = "api.mamabudget"
+frontend_subdomain  = "budget"
+backend_subdomain   = "api.budget"
