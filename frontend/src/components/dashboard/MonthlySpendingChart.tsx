@@ -1,4 +1,4 @@
-import { Card, Group, Stack, Text } from '@mantine/core';
+import { Card, Stack, Text } from '@mantine/core';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { BudgetDetail } from '../../types/budget';
 import { formatCurrency } from '../../utils/formatCurrency';
