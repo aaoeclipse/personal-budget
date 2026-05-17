@@ -98,7 +98,7 @@ def create_expense(db: Session, user_id: uuid.UUID, data: ExpenseCreate) -> Expe
             raise NotFound("Budget not found")
     expense = Expense(
         user_id=user_id, budget_id=data.budget_id, category_id=data.category_id,
-        amount=data.amount, description=data.description or "", date=data.date,
+        amount=data.amount, currency=data.currency, description=data.description or "", date=data.date,
     )
     db.add(expense)
     db.commit()
@@ -150,6 +150,9 @@ def update_expense(db: Session, user_id: uuid.UUID, expense_id: uuid.UUID, data:
         role = _check_budget_access(db, update_data["budget_id"], user_id)
         if not role:
             raise NotFound("Budget not found")
+    # Ensure description is never set to None on the NOT NULL column
+    if "description" in update_data and update_data["description"] is None:
+        update_data["description"] = ""
     for field, value in update_data.items():
         setattr(expense, field, value)
     db.commit()
