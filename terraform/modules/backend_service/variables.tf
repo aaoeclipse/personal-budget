@@ -41,6 +41,12 @@ variable "jwt_secret_arn" {
   type = string
 }
 
+variable "enable_https" {
+  description = "Whether to enable HTTPS on ALB"
+  type        = bool
+  default     = false
+}
+
 variable "certificate_arn" {
   description = "ACM certificate ARN for HTTPS on ALB"
   type        = string

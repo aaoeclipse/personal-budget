@@ -34,6 +34,7 @@ module "backend_service" {
   backend_image_tag  = var.backend_image_tag
   db_secret_arn      = module.database.db_secret_arn
   jwt_secret_arn     = module.database.jwt_secret_arn
+  enable_https       = var.domain_name != ""
   certificate_arn    = var.domain_name != "" ? module.dns[0].certificate_arn : ""
   frontend_url       = local.frontend_url
 }
