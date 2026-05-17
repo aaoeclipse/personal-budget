@@ -84,20 +84,20 @@ def get_budget_detail(db: Session, user_id: uuid.UUID, budget_id: uuid.UUID) -> 
     total_spent = db.execute(
         select(_spent_in_usd_expr()).where(Expense.budget_id == budget_id)
     ).scalar_one()
-    total_spent = Decimal(str(total_spent))
+    total_spent = Decimal(str(total_spent)).quantize(Decimal("0.01"))
     member_count = _get_member_count(db, budget)
     budget_amount = Decimal(str(budget.amount))
     usd_to_gtq = Decimal("7.7")
 
     return BudgetDetailResponse(
         id=budget.id, name=budget.name, amount=budget.amount,
-        amount_gtq=budget_amount * usd_to_gtq,
+        amount_gtq=(budget_amount * usd_to_gtq).quantize(Decimal("0.01")),
         start_date=budget.start_date, end_date=budget.end_date,
         is_shared=budget.is_shared, role=role, member_count=member_count,
         created_at=budget.created_at, updated_at=budget.updated_at,
         total_spent=total_spent,
-        total_spent_gtq=total_spent * usd_to_gtq,
-        remaining=budget_amount - total_spent,
+        total_spent_gtq=(total_spent * usd_to_gtq).quantize(Decimal("0.01")),
+        remaining=(budget_amount - total_spent).quantize(Decimal("0.01")),
     )
 
 

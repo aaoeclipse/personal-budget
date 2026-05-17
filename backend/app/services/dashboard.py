@@ -47,7 +47,7 @@ def get_dashboard(db: Session, user_id: uuid.UUID) -> DashboardResponse:
             db.execute(
                 select(func.coalesce(func.sum(_amount_in_usd()), 0)).where(Expense.budget_id == b.id)
             ).scalar_one()
-        ))
+        )).quantize(Decimal("0.01"))
         role = "owner" if b.user_id == user_id else "editor"
         member_count = 1
         if b.is_shared:
@@ -57,12 +57,13 @@ def get_dashboard(db: Session, user_id: uuid.UUID) -> DashboardResponse:
         budget_amount = Decimal(str(b.amount))
         active_budgets.append(BudgetDetailResponse(
             id=b.id, name=b.name, amount=b.amount,
-            amount_gtq=budget_amount * USD_TO_GTQ,
+            amount_gtq=(budget_amount * USD_TO_GTQ).quantize(Decimal("0.01")),
             start_date=b.start_date, end_date=b.end_date,
             is_shared=b.is_shared, role=role, member_count=member_count,
             created_at=b.created_at, updated_at=b.updated_at,
-            total_spent=spent, total_spent_gtq=spent * USD_TO_GTQ,
-            remaining=budget_amount - spent,
+            total_spent=spent,
+            total_spent_gtq=(spent * USD_TO_GTQ).quantize(Decimal("0.01")),
+            remaining=(budget_amount - spent).quantize(Decimal("0.01")),
         ))
 
     # Total spent (last 30 days) — converted to USD
@@ -72,7 +73,7 @@ def get_dashboard(db: Session, user_id: uuid.UUID) -> DashboardResponse:
             select(func.coalesce(func.sum(_amount_in_usd()), 0))
             .where(Expense.user_id == user_id, Expense.date >= thirty_days_ago)
         ).scalar_one()
-    ))
+    )).quantize(Decimal("0.01"))
 
     # Spending by category (last 30 days) — converted to USD
     cat_rows = db.execute(
@@ -83,7 +84,7 @@ def get_dashboard(db: Session, user_id: uuid.UUID) -> DashboardResponse:
         .order_by(func.sum(_amount_in_usd()).desc())
     ).all()
     spending_by_category = [
-        SpendingByCategory(category_name=r.name, category_color=r.color, total=Decimal(str(r.total)))
+        SpendingByCategory(category_name=r.name, category_color=r.color, total=Decimal(str(r.total)).quantize(Decimal("0.01")))
         for r in cat_rows
     ]
 
@@ -105,7 +106,7 @@ def get_dashboard(db: Session, user_id: uuid.UUID) -> DashboardResponse:
         .group_by(Expense.date)
         .order_by(Expense.date)
     ).all()
-    daily_spending = [DailySpending(date=r.date, total=Decimal(str(r.total))) for r in daily_rows]
+    daily_spending = [DailySpending(date=r.date, total=Decimal(str(r.total)).quantize(Decimal("0.01"))) for r in daily_rows]
 
     return DashboardResponse(
         active_budgets=active_budgets,
@@ -137,7 +138,7 @@ def get_monthly_spending(db: Session, user_id: uuid.UUID, num_months: int = 6) -
     months: list[MonthlySpending] = []
     prev_total = None
     for r in rows:
-        total = Decimal(str(r.total))
+        total = Decimal(str(r.total)).quantize(Decimal("0.01"))
         month_str = f"{int(r.year)}-{int(r.month):02d}"
         change_pct = None
         if prev_total is not None and prev_total > 0:
