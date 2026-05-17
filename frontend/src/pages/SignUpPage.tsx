@@ -31,8 +31,8 @@ export function SignUpPage() {
   };
 
   return (
-    <Center mih="100vh" style={{ backgroundColor: 'var(--mantine-color-body)' }}>
-      <Card shadow="md" radius="lg" p="xl" w={400} withBorder>
+    <Center mih="100vh" p="md" style={{ backgroundColor: 'var(--mantine-color-body)' }}>
+      <Card shadow="md" radius="lg" p="xl" w="100%" maw={400} withBorder>
         <Stack>
           <Title order={2} ta="center" c="coral">
             Personal Budget
