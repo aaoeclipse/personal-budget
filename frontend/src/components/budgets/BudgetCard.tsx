@@ -1,5 +1,5 @@
-import { ActionIcon, Card, Group, Progress, Stack, Text } from '@mantine/core';
-import { IconEdit, IconTrash } from '@tabler/icons-react';
+import { ActionIcon, Badge, Card, Group, Progress, Stack, Text } from '@mantine/core';
+import { IconEdit, IconTrash, IconUsers } from '@tabler/icons-react';
 import type { Budget } from '../../types/budget';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDate } from '../../utils/formatDate';
@@ -8,25 +8,43 @@ interface BudgetCardProps {
   budget: Budget & { total_spent?: number; remaining?: number };
   onEdit: () => void;
   onDelete: () => void;
+  onMembers?: () => void;
 }
 
-export function BudgetCard({ budget, onEdit, onDelete }: BudgetCardProps) {
+export function BudgetCard({ budget, onEdit, onDelete, onMembers }: BudgetCardProps) {
   const spent = budget.total_spent ?? 0;
   const pct = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
   const color = pct >= 90 ? 'red' : pct >= 70 ? 'yellow' : 'teal';
+  const isOwner = budget.role === 'owner';
 
   return (
     <Card shadow="xs" padding="md" radius="md" withBorder>
       <Stack gap="xs">
         <Group justify="space-between">
-          <Text fw={600}>{budget.name}</Text>
+          <Group gap="xs">
+            <Text fw={600}>{budget.name}</Text>
+            {budget.is_shared && (
+              <Badge size="xs" variant="light" color="blue" leftSection={<IconUsers size={10} />}>
+                {budget.member_count}
+              </Badge>
+            )}
+          </Group>
           <Group gap={4}>
-            <ActionIcon variant="subtle" color="gray" onClick={onEdit}>
-              <IconEdit size={16} />
-            </ActionIcon>
-            <ActionIcon variant="subtle" color="red" onClick={onDelete}>
-              <IconTrash size={16} />
-            </ActionIcon>
+            {onMembers && (
+              <ActionIcon variant="subtle" color="blue" onClick={onMembers} title="Members">
+                <IconUsers size={16} />
+              </ActionIcon>
+            )}
+            {isOwner && (
+              <>
+                <ActionIcon variant="subtle" color="gray" onClick={onEdit}>
+                  <IconEdit size={16} />
+                </ActionIcon>
+                <ActionIcon variant="subtle" color="red" onClick={onDelete}>
+                  <IconTrash size={16} />
+                </ActionIcon>
+              </>
+            )}
           </Group>
         </Group>
         <Text size="xl" fw={700}>

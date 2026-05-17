@@ -10,6 +10,7 @@ export interface Expense {
   created_at: string;
   updated_at: string;
   category?: Category;
+  creator_name?: string;
 }
 
 export interface ExpenseCreate {

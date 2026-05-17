@@ -5,6 +5,7 @@ import { IconPlus } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { BudgetCard } from '../components/budgets/BudgetCard';
 import { BudgetForm } from '../components/budgets/BudgetForm';
+import { BudgetMembersDrawer } from '../components/budgets/BudgetMembersDrawer';
 import { ConfirmModal } from '../components/common/ConfirmModal';
 import { EmptyState } from '../components/common/EmptyState';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
@@ -24,6 +25,7 @@ export function BudgetsPage() {
   const [editing, setEditing] = useState<Budget | undefined>();
   const [deleting, setDeleting] = useState<string | null>(null);
   const [details, setDetails] = useState<Record<string, BudgetDetail>>({});
+  const [membersDrawer, setMembersDrawer] = useState<{ budgetId: string; budgetName: string; isOwner: boolean } | null>(null);
 
   useEffect(() => {
     if (budgets) {
@@ -64,6 +66,7 @@ export function BudgetsPage() {
               budget={details[b.id] ?? b}
               onEdit={() => { setEditing(b); setFormOpen(true); }}
               onDelete={() => setDeleting(b.id)}
+              onMembers={() => setMembersDrawer({ budgetId: b.id, budgetName: b.name, isOwner: b.role === 'owner' })}
             />
           ))}
         </SimpleGrid>
@@ -102,6 +105,16 @@ export function BudgetsPage() {
           }
         }}
       />
+
+      {membersDrawer && (
+        <BudgetMembersDrawer
+          opened={!!membersDrawer}
+          onClose={() => setMembersDrawer(null)}
+          budgetId={membersDrawer.budgetId}
+          budgetName={membersDrawer.budgetName}
+          isOwner={membersDrawer.isOwner}
+        />
+      )}
     </>
   );
 }

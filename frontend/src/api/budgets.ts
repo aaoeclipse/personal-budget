@@ -1,4 +1,4 @@
-import type { Budget, BudgetCreate, BudgetDetail, BudgetUpdate } from '../types/budget';
+import type { Budget, BudgetCreate, BudgetDetail, BudgetMember, BudgetUpdate } from '../types/budget';
 import api from './client';
 
 export const budgetsApi = {
@@ -12,4 +12,14 @@ export const budgetsApi = {
   update: (id: string, data: BudgetUpdate) => api.put<Budget>(`/budgets/${id}`, data).then((r) => r.data),
 
   delete: (id: string) => api.delete(`/budgets/${id}`),
+
+  // Member management
+  inviteMember: (budgetId: string, email: string, role: string = 'editor') =>
+    api.post(`/budgets/${budgetId}/members/invite`, { email, role }).then((r) => r.data),
+
+  listMembers: (budgetId: string) =>
+    api.get<BudgetMember[]>(`/budgets/${budgetId}/members`).then((r) => r.data),
+
+  removeMember: (budgetId: string, memberUserId: string) =>
+    api.delete(`/budgets/${budgetId}/members/${memberUserId}`),
 };

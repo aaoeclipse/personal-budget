@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '../api/dashboard';
 import { BudgetAlertsBanner } from '../components/dashboard/BudgetAlertsBanner';
 import { BudgetOverviewCard } from '../components/dashboard/BudgetOverviewCard';
+import { InvitationsBanner } from '../components/dashboard/InvitationsBanner';
 import { MonthlySpendingChart } from '../components/dashboard/MonthlySpendingChart';
 import { RecentExpensesList } from '../components/dashboard/RecentExpensesList';
 import { SpendingByCategoryChart } from '../components/dashboard/SpendingByCategoryChart';
@@ -21,6 +22,8 @@ export function DashboardPage() {
   return (
     <Stack gap={isMobile ? 'sm' : 'md'}>
       <Title order={2} size={isMobile ? 'h3' : 'h2'}>Hey, {user?.name}!</Title>
+
+      <InvitationsBanner />
 
       {data && (
         <>

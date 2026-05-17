@@ -63,6 +63,10 @@ export function ExpensesPage() {
   const updateMutation = useUpdateExpense();
   const deleteMutation = useDeleteExpense();
 
+  // Determine if we're viewing a shared budget's expenses
+  const selectedBudget = budgets.find((b) => b.id === budgetId);
+  const isSharedView = selectedBudget?.is_shared ?? false;
+
   if (isLoading) return <LoadingSpinner />;
 
   const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 0;
@@ -178,6 +182,9 @@ export function ExpensesPage() {
                           {exp.category.name}
                         </Badge>
                       )}
+                      {isSharedView && exp.creator_name && (
+                        <Text size="xs" c="dimmed">by {exp.creator_name}</Text>
+                      )}
                     </Group>
                   </div>
                 </Group>
@@ -206,6 +213,7 @@ export function ExpensesPage() {
                   <Table.Th>Date</Table.Th>
                   <Table.Th>Description</Table.Th>
                   <Table.Th>Category</Table.Th>
+                  {isSharedView && <Table.Th>Added By</Table.Th>}
                   <Table.Th ta="right">Amount</Table.Th>
                   <Table.Th w={80} />
                 </Table.Tr>
@@ -228,6 +236,11 @@ export function ExpensesPage() {
                         </Badge>
                       )}
                     </Table.Td>
+                    {isSharedView && (
+                      <Table.Td>
+                        <Text size="sm" c="dimmed">{exp.creator_name || '-'}</Text>
+                      </Table.Td>
+                    )}
                     <Table.Td ta="right">
                       <Text size="sm" fw={600}>
                         {formatCurrency(exp.amount)}
