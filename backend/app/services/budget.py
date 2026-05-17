@@ -4,7 +4,7 @@ import uuid
 from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import case, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.exceptions import Forbidden, NotFound
@@ -12,6 +12,22 @@ from app.models.budget import Budget
 from app.models.budget_member import BudgetMember
 from app.models.expense import Expense
 from app.schemas.budget import BudgetCreate, BudgetDetailResponse, BudgetResponse, BudgetUpdate
+
+# Conversion rate: 1 USD = 7.7 GTQ
+GTQ_TO_USD = Decimal("0.1298701298701299")  # 1/7.7
+
+
+def _spent_in_usd_expr():
+    """SQL expression to sum expenses converted to USD."""
+    return func.coalesce(
+        func.sum(
+            case(
+                (Expense.currency == "GTQ", Expense.amount * GTQ_TO_USD),
+                else_=Expense.amount,
+            )
+        ),
+        0,
+    )
 
 
 def list_budgets(db: Session, user_id: uuid.UUID, active: bool | None = None) -> list[BudgetResponse]:
@@ -66,17 +82,22 @@ def get_budget_detail(db: Session, user_id: uuid.UUID, budget_id: uuid.UUID) -> 
             raise Forbidden()
 
     total_spent = db.execute(
-        select(func.coalesce(func.sum(Expense.amount), 0)).where(Expense.budget_id == budget_id)
+        select(_spent_in_usd_expr()).where(Expense.budget_id == budget_id)
     ).scalar_one()
     total_spent = Decimal(str(total_spent))
     member_count = _get_member_count(db, budget)
+    budget_amount = Decimal(str(budget.amount))
+    usd_to_gtq = Decimal("7.7")
 
     return BudgetDetailResponse(
         id=budget.id, name=budget.name, amount=budget.amount,
+        amount_gtq=budget_amount * usd_to_gtq,
         start_date=budget.start_date, end_date=budget.end_date,
         is_shared=budget.is_shared, role=role, member_count=member_count,
         created_at=budget.created_at, updated_at=budget.updated_at,
-        total_spent=total_spent, remaining=Decimal(str(budget.amount)) - total_spent,
+        total_spent=total_spent,
+        total_spent_gtq=total_spent * usd_to_gtq,
+        remaining=budget_amount - total_spent,
     )
 
 

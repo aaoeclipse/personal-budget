@@ -37,4 +37,6 @@ class BudgetResponse(BaseModel):
 
 class BudgetDetailResponse(BudgetResponse):
     total_spent: Decimal
+    total_spent_gtq: Decimal = Decimal("0")
     remaining: Decimal
+    amount_gtq: Decimal = Decimal("0")

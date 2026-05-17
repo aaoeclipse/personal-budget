@@ -2,7 +2,7 @@ import uuid
 from datetime import date, timedelta
 from decimal import Decimal
 
-from sqlalchemy import extract, func, or_, select
+from sqlalchemy import case, extract, func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.budget import Budget
@@ -11,6 +11,18 @@ from app.models.category import Category
 from app.models.expense import Expense
 from app.schemas.budget import BudgetDetailResponse
 from app.schemas.dashboard import DailySpending, DashboardResponse, MonthlySpending, MonthlySpendingResponse, SpendingByCategory
+
+# Conversion rate: 1 USD = 7.7 GTQ
+GTQ_TO_USD = Decimal("0.1298701298701299")  # 1/7.7
+USD_TO_GTQ = Decimal("7.7")
+
+
+def _amount_in_usd():
+    """SQL CASE to convert expense amount to USD."""
+    return case(
+        (Expense.currency == "GTQ", Expense.amount * GTQ_TO_USD),
+        else_=Expense.amount,
+    )
 
 
 def get_dashboard(db: Session, user_id: uuid.UUID) -> DashboardResponse:
@@ -33,7 +45,7 @@ def get_dashboard(db: Session, user_id: uuid.UUID) -> DashboardResponse:
     for b in active_budgets_rows:
         spent = Decimal(str(
             db.execute(
-                select(func.coalesce(func.sum(Expense.amount), 0)).where(Expense.budget_id == b.id)
+                select(func.coalesce(func.sum(_amount_in_usd()), 0)).where(Expense.budget_id == b.id)
             ).scalar_one()
         ))
         role = "owner" if b.user_id == user_id else "editor"
@@ -42,30 +54,33 @@ def get_dashboard(db: Session, user_id: uuid.UUID) -> DashboardResponse:
             member_count = db.execute(
                 select(func.count(BudgetMember.id)).where(BudgetMember.budget_id == b.id)
             ).scalar_one() or 1
+        budget_amount = Decimal(str(b.amount))
         active_budgets.append(BudgetDetailResponse(
             id=b.id, name=b.name, amount=b.amount,
+            amount_gtq=budget_amount * USD_TO_GTQ,
             start_date=b.start_date, end_date=b.end_date,
             is_shared=b.is_shared, role=role, member_count=member_count,
             created_at=b.created_at, updated_at=b.updated_at,
-            total_spent=spent, remaining=Decimal(str(b.amount)) - spent,
+            total_spent=spent, total_spent_gtq=spent * USD_TO_GTQ,
+            remaining=budget_amount - spent,
         ))
 
-    # Total spent (last 30 days)
+    # Total spent (last 30 days) — converted to USD
     thirty_days_ago = today - timedelta(days=30)
     total_spent = Decimal(str(
         db.execute(
-            select(func.coalesce(func.sum(Expense.amount), 0))
+            select(func.coalesce(func.sum(_amount_in_usd()), 0))
             .where(Expense.user_id == user_id, Expense.date >= thirty_days_ago)
         ).scalar_one()
     ))
 
-    # Spending by category (last 30 days)
+    # Spending by category (last 30 days) — converted to USD
     cat_rows = db.execute(
-        select(Category.name, Category.color, func.sum(Expense.amount).label("total"))
+        select(Category.name, Category.color, func.sum(_amount_in_usd()).label("total"))
         .join(Expense, Expense.category_id == Category.id)
         .where(Expense.user_id == user_id, Expense.date >= thirty_days_ago)
         .group_by(Category.name, Category.color)
-        .order_by(func.sum(Expense.amount).desc())
+        .order_by(func.sum(_amount_in_usd()).desc())
     ).all()
     spending_by_category = [
         SpendingByCategory(category_name=r.name, category_color=r.color, total=Decimal(str(r.total)))
@@ -83,9 +98,9 @@ def get_dashboard(db: Session, user_id: uuid.UUID) -> DashboardResponse:
         ).scalars().unique().all()
     )
 
-    # Daily spending (last 30 days)
+    # Daily spending (last 30 days) — converted to USD
     daily_rows = db.execute(
-        select(Expense.date, func.sum(Expense.amount).label("total"))
+        select(Expense.date, func.sum(_amount_in_usd()).label("total"))
         .where(Expense.user_id == user_id, Expense.date >= thirty_days_ago)
         .group_by(Expense.date)
         .order_by(Expense.date)
@@ -112,7 +127,7 @@ def get_monthly_spending(db: Session, user_id: uuid.UUID, num_months: int = 6) -
         select(
             extract("year", Expense.date).label("year"),
             extract("month", Expense.date).label("month"),
-            func.sum(Expense.amount).label("total"),
+            func.sum(_amount_in_usd()).label("total"),
         )
         .where(Expense.user_id == user_id, Expense.date >= start)
         .group_by(extract("year", Expense.date), extract("month", Expense.date))
