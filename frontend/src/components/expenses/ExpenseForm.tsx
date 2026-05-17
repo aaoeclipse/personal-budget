@@ -2,11 +2,13 @@ import {
   ActionIcon,
   Box,
   Button,
+  ColorInput,
   Drawer,
   Group,
   Modal,
   NumberInput,
   Progress,
+  SegmentedControl,
   Select,
   SimpleGrid,
   Stack,
@@ -17,15 +19,16 @@ import {
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { useMediaQuery } from '@mantine/hooks';
-import { IconCalendar, IconNote, IconWallet } from '@tabler/icons-react';
+import { IconCalendar, IconNote, IconPlus, IconWallet } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { budgetsApi } from '../../api/budgets';
+import { useCreateCategory } from '../../hooks/useCategories';
 import type { Budget } from '../../types/budget';
 import type { Category } from '../../types/category';
-import type { Expense, ExpenseCreate } from '../../types/expense';
+import type { Currency, Expense, ExpenseCreate } from '../../types/expense';
 import { formatCurrency } from '../../utils/formatCurrency';
-import { getCategoryEmoji } from '../../utils/categoryEmojis';
+import { getCategoryEmoji, EMOJI_OPTIONS } from '../../utils/categoryEmojis';
 
 interface BudgetRemainingInfoProps {
   budgetDetail: { amount: number; total_spent: number; remaining: number; name: string };
@@ -74,14 +77,27 @@ export function ExpenseForm({ opened, onClose, onSubmit, loading, initial, categ
   const isMobile = useMediaQuery('(max-width: 768px)');
   const isEditing = !!initial;
 
+  // Find a default budget (first active budget)
+  const defaultBudget = budgets.length > 0 ? budgets[0] : null;
+
   const [step, setStep] = useState(isEditing ? 3 : 1);
   const [amount, setAmount] = useState<number | string>(initial?.amount ?? '');
+  const [currency, setCurrency] = useState<Currency>(initial?.currency ?? 'GTQ');
   const [categoryId, setCategoryId] = useState<string | null>(initial?.category_id ?? null);
   const [description, setDescription] = useState(initial?.description ?? '');
-  const [budgetId, setBudgetId] = useState<string | null>(initial?.budget_id ?? null);
+  const [budgetId, setBudgetId] = useState<string | null>(
+    initial?.budget_id ?? defaultBudget?.id ?? null
+  );
   const [date, setDate] = useState<Date | null>(
     initial?.date ? new Date(initial.date + 'T00:00:00') : new Date()
   );
+
+  // Inline category creation
+  const [showNewCategory, setShowNewCategory] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatColor, setNewCatColor] = useState('#4CAF50');
+  const [newCatEmoji, setNewCatEmoji] = useState('📦');
+  const createCategoryMutation = useCreateCategory();
 
   // Fetch budget details when a budget is selected
   const { data: budgetDetail } = useQuery({
@@ -93,13 +109,16 @@ export function ExpenseForm({ opened, onClose, onSubmit, loading, initial, categ
   // Optional field visibility toggles
   const [showDescription, setShowDescription] = useState(isEditing && !!initial?.description);
   const [showDate, setShowDate] = useState(isEditing);
-  const [showBudget, setShowBudget] = useState(isEditing && !!initial?.budget_id);
+  const [showBudget, setShowBudget] = useState(isEditing ? !!initial?.budget_id : !!defaultBudget);
+
+  const currencyPrefix = currency === 'GTQ' ? 'Q' : '$';
 
   const handleSubmit = () => {
     if (!amount || !categoryId || !date) return;
     onSubmit({
       description: description || undefined,
       amount: Number(amount),
+      currency,
       category_id: categoryId,
       budget_id: budgetId || undefined,
       date: date.toISOString().split('T')[0],
@@ -116,17 +135,36 @@ export function ExpenseForm({ opened, onClose, onSubmit, loading, initial, categ
     setStep(3);
   };
 
+  const handleCreateCategory = () => {
+    if (!newCatName.trim()) return;
+    createCategoryMutation.mutate(
+      { name: newCatName.trim(), color: newCatColor, emoji: newCatEmoji },
+      {
+        onSuccess: (created) => {
+          setCategoryId(created.id);
+          setShowNewCategory(false);
+          setNewCatName('');
+          setNewCatColor('#4CAF50');
+          setNewCatEmoji('📦');
+          setStep(3);
+        },
+      }
+    );
+  };
+
   const resetForm = () => {
     setStep(isEditing ? 3 : 1);
     if (!isEditing) {
       setAmount('');
+      setCurrency('GTQ');
       setCategoryId(null);
       setDescription('');
-      setBudgetId(null);
+      setBudgetId(defaultBudget?.id ?? null);
       setDate(new Date());
       setShowDescription(false);
       setShowDate(false);
-      setShowBudget(false);
+      setShowBudget(!!defaultBudget);
+      setShowNewCategory(false);
     }
   };
 
@@ -140,17 +178,30 @@ export function ExpenseForm({ opened, onClose, onSubmit, loading, initial, categ
       {/* Edit mode: show everything at once */}
       {isEditing ? (
         <>
-          <NumberInput
-            label="Amount"
-            required
-            min={0}
-            decimalScale={2}
-            prefix="$"
-            size="lg"
-            value={amount}
-            onChange={setAmount}
-            styles={{ input: { fontSize: '1.5rem', textAlign: 'center' } }}
-          />
+          <Group gap="xs" align="flex-end">
+            <NumberInput
+              label="Amount"
+              required
+              min={0}
+              decimalScale={2}
+              prefix={currencyPrefix}
+              size="lg"
+              value={amount}
+              onChange={setAmount}
+              styles={{ input: { fontSize: '1.5rem', textAlign: 'center' } }}
+              style={{ flex: 1 }}
+            />
+            <SegmentedControl
+              value={currency}
+              onChange={(v) => setCurrency(v as Currency)}
+              data={[
+                { label: 'Q', value: 'GTQ' },
+                { label: '$', value: 'USD' },
+              ]}
+              size="md"
+              color="coral"
+            />
+          </Group>
           <div>
             <Text size="sm" fw={500} mb="xs">Category</Text>
             <SimpleGrid cols={3} spacing="xs">
@@ -201,14 +252,24 @@ export function ExpenseForm({ opened, onClose, onSubmit, loading, initial, categ
         </>
       ) : (
         <>
-          {/* Step 1: Amount */}
+          {/* Step 1: Amount + Currency */}
           {step === 1 && (
             <Stack align="center" gap="xl" pt="lg">
               <Text size="sm" c="dimmed" fw={500}>How much?</Text>
+              <SegmentedControl
+                value={currency}
+                onChange={(v) => setCurrency(v as Currency)}
+                data={[
+                  { label: 'Q Quetzales', value: 'GTQ' },
+                  { label: '$ Dollars', value: 'USD' },
+                ]}
+                size="sm"
+                color="coral"
+              />
               <NumberInput
                 min={0}
                 decimalScale={2}
-                prefix="$"
+                prefix={currencyPrefix}
                 size="xl"
                 value={amount}
                 onChange={setAmount}
@@ -236,7 +297,7 @@ export function ExpenseForm({ opened, onClose, onSubmit, loading, initial, categ
             <Stack gap="md">
               <Group justify="space-between" align="center">
                 <Text size="sm" c="dimmed" fw={500}>Pick a category</Text>
-                <Text size="lg" fw={700} c="coral">${Number(amount).toFixed(2)}</Text>
+                <Text size="lg" fw={700} c="coral">{currencyPrefix}{Number(amount).toFixed(2)}</Text>
               </Group>
               <SimpleGrid cols={3} spacing="xs">
                 {categories.map((cat) => (
@@ -258,7 +319,66 @@ export function ExpenseForm({ opened, onClose, onSubmit, loading, initial, categ
                     <Text size="xs" truncate mt={4}>{cat.name}</Text>
                   </UnstyledButton>
                 ))}
+                {/* Add new category button */}
+                <UnstyledButton
+                  onClick={() => setShowNewCategory(true)}
+                  style={{
+                    padding: '12px 8px',
+                    borderRadius: '12px',
+                    border: '2px dashed var(--mantine-color-gray-4)',
+                    textAlign: 'center',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <Text size="xl"><IconPlus size={24} /></Text>
+                  <Text size="xs" mt={4} c="dimmed">New</Text>
+                </UnstyledButton>
               </SimpleGrid>
+
+              {/* Inline new category form */}
+              {showNewCategory && (
+                <Stack gap="xs" p="sm" style={{ borderRadius: 8, border: '1px solid var(--mantine-color-gray-3)' }}>
+                  <Text size="sm" fw={500}>New Category</Text>
+                  <TextInput
+                    placeholder="Category name"
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    autoFocus
+                  />
+                  <Group gap="xs">
+                    <ColorInput
+                      placeholder="Color"
+                      value={newCatColor}
+                      onChange={setNewCatColor}
+                      size="xs"
+                      style={{ flex: 1 }}
+                    />
+                    <Select
+                      placeholder="Emoji"
+                      data={EMOJI_OPTIONS.map((e) => ({ value: e, label: e }))}
+                      value={newCatEmoji}
+                      onChange={(v) => setNewCatEmoji(v || '📦')}
+                      size="xs"
+                      w={80}
+                    />
+                  </Group>
+                  <Group gap="xs">
+                    <Button
+                      size="xs"
+                      color="coral"
+                      onClick={handleCreateCategory}
+                      loading={createCategoryMutation.isPending}
+                      disabled={!newCatName.trim()}
+                    >
+                      Create
+                    </Button>
+                    <Button size="xs" variant="subtle" color="gray" onClick={() => setShowNewCategory(false)}>
+                      Cancel
+                    </Button>
+                  </Group>
+                </Stack>
+              )}
+
               <Button variant="subtle" color="gray" size="xs" onClick={() => setStep(1)}>
                 ← Back
               </Button>
@@ -279,7 +399,7 @@ export function ExpenseForm({ opened, onClose, onSubmit, loading, initial, categ
                     {categories.find(c => c.id === categoryId)?.name}
                   </Text>
                 </Group>
-                <Text size="lg" fw={700} c="coral">${Number(amount).toFixed(2)}</Text>
+                <Text size="lg" fw={700} c="coral">{currencyPrefix}{Number(amount).toFixed(2)}</Text>
               </Group>
 
               {/* Icon toggle row */}
