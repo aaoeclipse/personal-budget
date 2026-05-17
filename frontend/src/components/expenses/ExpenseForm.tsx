@@ -6,6 +6,7 @@ import {
   Group,
   Modal,
   NumberInput,
+  Progress,
   Select,
   SimpleGrid,
   Stack,
@@ -17,11 +18,47 @@ import {
 import { DateInput } from '@mantine/dates';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconCalendar, IconNote, IconWallet } from '@tabler/icons-react';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { budgetsApi } from '../../api/budgets';
 import type { Budget } from '../../types/budget';
 import type { Category } from '../../types/category';
 import type { Expense, ExpenseCreate } from '../../types/expense';
+import { formatCurrency } from '../../utils/formatCurrency';
 import { getCategoryEmoji } from '../../utils/categoryEmojis';
+
+interface BudgetRemainingInfoProps {
+  budgetDetail: { amount: number; total_spent: number; remaining: number; name: string };
+  currentAmount: number;
+}
+
+function BudgetRemainingInfo({ budgetDetail, currentAmount }: BudgetRemainingInfoProps) {
+  const remainingAfter = budgetDetail.remaining - currentAmount;
+  const pctUsed = budgetDetail.amount > 0
+    ? ((budgetDetail.total_spent + currentAmount) / budgetDetail.amount) * 100
+    : 0;
+  const color = pctUsed >= 100 ? 'red' : pctUsed >= 75 ? 'yellow' : 'teal';
+
+  return (
+    <Stack gap={4} p="xs" style={{ borderRadius: 8, border: '1px solid var(--mantine-color-gray-3)' }}>
+      <Group justify="space-between">
+        <Text size="xs" c="dimmed">Budget: {budgetDetail.name}</Text>
+        <Text size="xs" fw={600} c={remainingAfter < 0 ? 'red' : 'teal'}>
+          {remainingAfter < 0 ? '-' : ''}{formatCurrency(Math.abs(remainingAfter))} {remainingAfter < 0 ? 'over' : 'left'}
+        </Text>
+      </Group>
+      <Progress value={Math.min(pctUsed, 100)} color={color} size="sm" radius="xl" />
+      <Group justify="space-between">
+        <Text size="xs" c="dimmed">
+          {formatCurrency(budgetDetail.total_spent + currentAmount)} of {formatCurrency(budgetDetail.amount)}
+        </Text>
+        <Text size="xs" c="dimmed">
+          {Math.round(pctUsed)}%
+        </Text>
+      </Group>
+    </Stack>
+  );
+}
 
 interface ExpenseFormProps {
   opened: boolean;
@@ -45,6 +82,13 @@ export function ExpenseForm({ opened, onClose, onSubmit, loading, initial, categ
   const [date, setDate] = useState<Date | null>(
     initial?.date ? new Date(initial.date + 'T00:00:00') : new Date()
   );
+
+  // Fetch budget details when a budget is selected
+  const { data: budgetDetail } = useQuery({
+    queryKey: ['budgets', budgetId],
+    queryFn: () => budgetsApi.get(budgetId!),
+    enabled: !!budgetId,
+  });
 
   // Optional field visibility toggles
   const [showDescription, setShowDescription] = useState(isEditing && !!initial?.description);
@@ -145,6 +189,12 @@ export function ExpenseForm({ opened, onClose, onSubmit, loading, initial, categ
             clearable
             searchable
           />
+          {budgetDetail && budgetId && (
+            <BudgetRemainingInfo
+              budgetDetail={budgetDetail}
+              currentAmount={Number(amount) || 0}
+            />
+          )}
           <Button onClick={handleSubmit} loading={loading} color="coral" size="md">
             Update Expense
           </Button>
@@ -282,14 +332,22 @@ export function ExpenseForm({ opened, onClose, onSubmit, loading, initial, categ
                 <DateInput value={date} onChange={setDate} />
               )}
               {showBudget && (
-                <Select
-                  placeholder="Select budget"
-                  data={budgets.map((b) => ({ value: b.id, label: b.name }))}
-                  value={budgetId}
-                  onChange={setBudgetId}
-                  clearable
-                  searchable
-                />
+                <>
+                  <Select
+                    placeholder="Select budget"
+                    data={budgets.map((b) => ({ value: b.id, label: b.name }))}
+                    value={budgetId}
+                    onChange={setBudgetId}
+                    clearable
+                    searchable
+                  />
+                  {budgetDetail && budgetId && (
+                    <BudgetRemainingInfo
+                      budgetDetail={budgetDetail}
+                      currentAmount={Number(amount) || 0}
+                    />
+                  )}
+                </>
               )}
 
               <Button
