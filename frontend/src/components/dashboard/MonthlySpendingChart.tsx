@@ -20,7 +20,7 @@ export function BudgetComparisonChart({ budgets }: BudgetComparisonChartProps) {
   const displayBudgets = selected ? [selected] : budgets;
 
   return (
-    <Card shadow="xs" padding="md" radius="md" withBorder>
+    <Card shadow="xs" padding="md" radius="md" withBorder h="100%">
       <Stack gap="sm">
         <Group justify="space-between" align="center">
           <Text fw={600}>Budget vs Spent</Text>

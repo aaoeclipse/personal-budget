@@ -10,7 +10,7 @@ interface RecentExpensesListProps {
 
 export function RecentExpensesList({ expenses }: RecentExpensesListProps) {
   return (
-    <Card shadow="xs" padding="md" radius="md" withBorder>
+    <Card shadow="xs" padding="md" radius="md" withBorder h="100%">
       <Text fw={600} mb="sm">
         Recent Expenses
       </Text>

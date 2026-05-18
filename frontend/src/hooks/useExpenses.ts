@@ -44,3 +44,15 @@ export function useDeleteExpense() {
     },
   });
 }
+
+export function useImportExpenses() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => expensesApi.importCsv(file),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['expenses'] });
+      qc.invalidateQueries({ queryKey: ['budgets'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+}

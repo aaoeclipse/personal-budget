@@ -38,3 +38,14 @@ export interface ExpenseListResponse {
   items: Expense[];
   total: number;
 }
+
+export interface CsvImportError {
+  row: number;
+  message: string;
+}
+
+export interface CsvImportResponse {
+  imported: number;
+  skipped: number;
+  errors: CsvImportError[];
+}

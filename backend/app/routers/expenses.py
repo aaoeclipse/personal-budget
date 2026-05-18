@@ -4,14 +4,14 @@ import uuid
 from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models.user import User
-from app.schemas.expense import ExpenseCreate, ExpenseListResponse, ExpenseResponse, ExpenseUpdate
+from app.schemas.expense import CsvImportResponse, ExpenseCreate, ExpenseListResponse, ExpenseResponse, ExpenseUpdate
 from app.services import expense as expense_service
 
 router = APIRouter(prefix="/expenses", tags=["expenses"])
@@ -100,6 +100,22 @@ def export_expenses_csv(
         media_type="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@router.post("/import/csv", response_model=CsvImportResponse)
+async def import_expenses_csv(
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if file.content_type and file.content_type not in ("text/csv", "application/vnd.ms-excel", "application/octet-stream"):
+        from app.exceptions import AppException
+        raise AppException(400, "File must be a CSV")
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:  # 5MB limit
+        from app.exceptions import AppException
+        raise AppException(400, "File too large (max 5MB)")
+    return expense_service.import_expenses_csv(db, user.id, content)
 
 
 @router.post("", response_model=ExpenseResponse, status_code=201)

@@ -3,7 +3,10 @@ import {
   Badge,
   Button,
   Card,
+  FileButton,
   Group,
+  List,
+  Modal,
   Pagination,
   Stack,
   Table,
@@ -12,8 +15,8 @@ import {
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconDownload, IconEdit, IconPlus, IconTrash } from '@tabler/icons-react';
-import { useState } from 'react';
+import { IconDownload, IconEdit, IconPlus, IconTrash, IconUpload } from '@tabler/icons-react';
+import { useRef, useState } from 'react';
 import { expensesApi } from '../api/expenses';
 import { ConfirmModal } from '../components/common/ConfirmModal';
 import { EmptyState } from '../components/common/EmptyState';
@@ -22,8 +25,8 @@ import { ExpenseFilterBar } from '../components/expenses/ExpenseFilters';
 import { ExpenseForm } from '../components/expenses/ExpenseForm';
 import { useBudgets } from '../hooks/useBudgets';
 import { useCategories } from '../hooks/useCategories';
-import { useCreateExpense, useDeleteExpense, useExpenses, useUpdateExpense } from '../hooks/useExpenses';
-import type { Expense, ExpenseCreate } from '../types/expense';
+import { useCreateExpense, useDeleteExpense, useExpenses, useImportExpenses, useUpdateExpense } from '../hooks/useExpenses';
+import type { CsvImportResponse, Expense, ExpenseCreate } from '../types/expense';
 import { getCategoryEmoji } from '../utils/categoryEmojis';
 import { formatCurrency } from '../utils/formatCurrency';
 import { formatDate } from '../utils/formatDate';
@@ -62,6 +65,27 @@ export function ExpensesPage() {
   const createMutation = useCreateExpense();
   const updateMutation = useUpdateExpense();
   const deleteMutation = useDeleteExpense();
+  const importMutation = useImportExpenses();
+  const [importResult, setImportResult] = useState<CsvImportResponse | null>(null);
+  const resetFileRef = useRef<() => void>(null);
+
+  const handleImportFile = (file: File | null) => {
+    if (!file) return;
+    importMutation.mutate(file, {
+      onSuccess: (result) => {
+        setImportResult(result);
+        if (result.imported > 0) {
+          notifications.show({ message: `${result.imported} expense(s) imported`, color: 'green' });
+        }
+      },
+      onError: () => {
+        notifications.show({ title: 'Error', message: 'Could not import CSV', color: 'red' });
+      },
+      onSettled: () => {
+        resetFileRef.current?.();
+      },
+    });
+  };
 
   // Determine if we're viewing a shared budget's expenses
   const selectedBudget = budgets.find((b) => b.id === budgetId);
@@ -77,31 +101,60 @@ export function ExpensesPage() {
         <Title order={2} size={isMobile ? 'h3' : 'h2'}>Expenses</Title>
         <Group gap="xs">
           {isMobile ? (
-            <ActionIcon
-              variant="light"
-              color="teal"
-              size="lg"
-              onClick={() => {
-                expensesApi.exportCsv({
-                  category_id: categoryId || undefined,
-                  budget_id: budgetId || undefined,
-                  start_date: startDate?.toISOString().split('T')[0],
-                  end_date: endDate?.toISOString().split('T')[0],
-                  search: search || undefined,
-                  min_amount: minAmount ? Number(minAmount) : undefined,
-                  max_amount: maxAmount ? Number(maxAmount) : undefined,
-                }).then(() => {
-                  notifications.show({ message: 'Expenses exported', color: 'green' });
-                }).catch(() => {
-                  notifications.show({ title: 'Error', message: 'Could not export', color: 'red' });
-                });
-              }}
-              title="Export CSV"
-            >
-              <IconDownload size={18} />
-            </ActionIcon>
+            <>
+              <FileButton onChange={handleImportFile} accept=".csv,text/csv" resetRef={resetFileRef}>
+                {(props) => (
+                  <ActionIcon
+                    {...props}
+                    variant="light"
+                    color="violet"
+                    size="lg"
+                    title="Import CSV"
+                    loading={importMutation.isPending}
+                  >
+                    <IconUpload size={18} />
+                  </ActionIcon>
+                )}
+              </FileButton>
+              <ActionIcon
+                variant="light"
+                color="teal"
+                size="lg"
+                onClick={() => {
+                  expensesApi.exportCsv({
+                    category_id: categoryId || undefined,
+                    budget_id: budgetId || undefined,
+                    start_date: startDate?.toISOString().split('T')[0],
+                    end_date: endDate?.toISOString().split('T')[0],
+                    search: search || undefined,
+                    min_amount: minAmount ? Number(minAmount) : undefined,
+                    max_amount: maxAmount ? Number(maxAmount) : undefined,
+                  }).then(() => {
+                    notifications.show({ message: 'Expenses exported', color: 'green' });
+                  }).catch(() => {
+                    notifications.show({ title: 'Error', message: 'Could not export', color: 'red' });
+                  });
+                }}
+                title="Export CSV"
+              >
+                <IconDownload size={18} />
+              </ActionIcon>
+            </>
           ) : (
             <>
+              <FileButton onChange={handleImportFile} accept=".csv,text/csv" resetRef={resetFileRef}>
+                {(props) => (
+                  <Button
+                    {...props}
+                    variant="light"
+                    leftSection={<IconUpload size={16} />}
+                    color="violet"
+                    loading={importMutation.isPending}
+                  >
+                    Import CSV
+                  </Button>
+                )}
+              </FileButton>
               <Button
                 variant="light"
                 leftSection={<IconDownload size={16} />}
@@ -317,6 +370,45 @@ export function ExpensesPage() {
           }
         }}
       />
+
+      <Modal
+        opened={!!importResult}
+        onClose={() => setImportResult(null)}
+        title="Import Results"
+        centered
+      >
+        {importResult && (
+          <Stack gap="md">
+            <Group gap="lg">
+              <div>
+                <Text size="xl" fw={700} c="teal">{importResult.imported}</Text>
+                <Text size="xs" c="dimmed">Imported</Text>
+              </div>
+              {importResult.errors.length > 0 && (
+                <div>
+                  <Text size="xl" fw={700} c="red">{importResult.errors.length}</Text>
+                  <Text size="xs" c="dimmed">Errors</Text>
+                </div>
+              )}
+            </Group>
+            {importResult.errors.length > 0 && (
+              <>
+                <Text size="sm" fw={500}>Errors:</Text>
+                <List size="sm" spacing="xs" styles={{ root: { maxHeight: 200, overflow: 'auto' } }}>
+                  {importResult.errors.map((err, i) => (
+                    <List.Item key={i}>
+                      <Text size="sm" c="red">Row {err.row}: {err.message}</Text>
+                    </List.Item>
+                  ))}
+                </List>
+              </>
+            )}
+            <Button onClick={() => setImportResult(null)} color="coral">
+              Close
+            </Button>
+          </Stack>
+        )}
+      </Modal>
     </Stack>
   );
 }

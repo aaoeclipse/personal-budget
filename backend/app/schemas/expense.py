@@ -59,3 +59,14 @@ class ExpenseResponse(BaseModel):
 class ExpenseListResponse(BaseModel):
     items: list[ExpenseResponse]
     total: int
+
+
+class CsvImportError(BaseModel):
+    row: int
+    message: str
+
+
+class CsvImportResponse(BaseModel):
+    imported: int
+    skipped: int
+    errors: list[CsvImportError]

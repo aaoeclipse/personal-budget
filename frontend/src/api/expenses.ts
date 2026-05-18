@@ -1,4 +1,4 @@
-import type { Expense, ExpenseCreate, ExpenseListResponse, ExpenseUpdate } from '../types/expense';
+import type { CsvImportResponse, Expense, ExpenseCreate, ExpenseListResponse, ExpenseUpdate } from '../types/expense';
 import api from './client';
 
 export interface ExpenseFilters {
@@ -37,4 +37,14 @@ export const expensesApi = {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     }),
+
+  importCsv: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api
+      .post<CsvImportResponse>('/expenses/import/csv', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data);
+  },
 };

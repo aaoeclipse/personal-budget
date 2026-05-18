@@ -1,10 +1,13 @@
 import {
   ActionIcon,
+  Badge,
   Button,
   Card,
+  ColorSwatch,
   Group,
   SimpleGrid,
   Stack,
+  Table,
   Text,
   Title,
 } from '@mantine/core';
@@ -52,8 +55,9 @@ export function CategoriesPage() {
             </Button>
           }
         />
-      ) : (
-        <SimpleGrid cols={{ base: 2, sm: 2, md: 3 }} spacing="sm">
+      ) : isMobile ? (
+        /* Mobile: compact grid */
+        <SimpleGrid cols={2} spacing="sm">
           {categories?.map((cat) => (
             <Card key={cat.id} shadow="xs" padding="sm" radius="md" withBorder>
               <Stack gap={4} align="center">
@@ -71,6 +75,47 @@ export function CategoriesPage() {
             </Card>
           ))}
         </SimpleGrid>
+      ) : (
+        /* Desktop: table layout */
+        <Card shadow="xs" padding="md" radius="md" withBorder>
+          <Table verticalSpacing="sm" highlightOnHover>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Category</Table.Th>
+                <Table.Th>Color</Table.Th>
+                <Table.Th style={{ width: 100, textAlign: 'right' }}>Actions</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {categories?.map((cat) => (
+                <Table.Tr key={cat.id}>
+                  <Table.Td>
+                    <Group gap="sm">
+                      <Text size="xl">{getCategoryEmoji(cat)}</Text>
+                      <Text fw={500}>{cat.name}</Text>
+                    </Group>
+                  </Table.Td>
+                  <Table.Td>
+                    <Group gap="xs">
+                      <ColorSwatch color={cat.color} size={16} />
+                      <Badge color={cat.color} variant="light" size="sm">{cat.color}</Badge>
+                    </Group>
+                  </Table.Td>
+                  <Table.Td>
+                    <Group gap={4} justify="flex-end">
+                      <ActionIcon variant="subtle" color="gray" onClick={() => { setEditing(cat); setFormOpen(true); }}>
+                        <IconEdit size={16} />
+                      </ActionIcon>
+                      <ActionIcon variant="subtle" color="red" onClick={() => setDeleting(cat.id)}>
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    </Group>
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Card>
       )}
 
       <CategoryForm

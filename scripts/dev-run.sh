@@ -1,48 +1,19 @@
-#!/usr/bin/env bash
-set -eo pipefail
+Script started on 2026-05-18 14:41:51-06:00 [TERM="xterm-256color" TTY="/dev/pts/14" COLUMNS="92" LINES="14"]
+[1m[7m%[27m[1m[0m                                                                                            ]2;eclipse@pop-os:~/Documents/PersonalProjects/mama-budget]1;..s/mama-budget]7;file://pop-os/home/eclipse/Documents/PersonalProjects/mama-budget\[0m[27m[24m[J]0;eclipse@pop-os:~/Documents/PersonalProjects/mama-budget | 92x14 | pts/18[1m[36m┌─[1m[30m([1m[32m~/Documents/PersonalProjects/mama-budget[1m[30m)[1m[36m──────────────────────[1m[30m([1m[36meclipse[1m[30m@[1m[32mpop-os:pts/18[1m[30m)[1m[36m─┐
+[1m[36m└[1m[34m─([1m[33m14:41:52[34m[00m[1m[34m)[1m[36m──>(B[m [K[59C [1m[36m─[1m[34m─([1m[33mMon,May18[1m[34m)─[1m[36m┘(B[m[75D[?1h=[?2004h[A[0m[27m[24m[J]0;eclipse@pop-os:~/Documents/PersonalProjects/mama-budget | 92x14 | pts/18[1m[36m┌─[1m[30m([1m[32m~/Documents/PersonalProjects/mama-budget[1m[30m)[1m[36m──────────────────────[1m[30m([1m[36meclipse[1m[30m@[1m[32mpop-os:pts/18[1m[30m)[1m[36m─┐
+[1m[36m└[1m[34m─([1m[33m14:41:52[34m[00m on [32mmain[00m[1m[34m)[1m[36m──>(B[m [K[51C [1m[36m─[1m[34m─([1m[33mMon,May18[1m[34m)─[1m[36m┘(B[m[67D[A[0m[27m[24m[J]0;eclipse@pop-os:~/Documents/PersonalProjects/mama-budget | 92x14 | pts/18[1m[36m┌─[1m[30m([1m[32m~/Documents/PersonalProjects/mama-budget[1m[30m)[1m[36m──────────────────────[1m[30m([1m[36meclipse[1m[30m@[1m[32mpop-os:pts/18[1m[30m)[1m[36m─┐
+[1m[36m└[1m[34m─([1m[33m14:41:52[34m[00m on [32mmain[00m[34m ✹[36m ✭[1m[34m)[1m[36m──>(B[m [K[47C [1m[36m─[1m[34m─([1m[33mMon,May18[1m[34m)─[1m[36m┘(B[m[63Dccatsc   csc   scripts[1m/[0m[0m/de
+[J[01;32mdeploy.sh[0m*     [J[01;32mdev-run.sh[0m*    [J[01;32mdev-setup.sh[0m*[J[A[0m[27m[24m[28Ccat scripts/de[K[33C [1m[36m─[1m[34m─([1m[33mMon,May18[1m[34m)─[1m[36m┘(B[m[49D           c  ggit dog[?1l>[?2004l
+[J]2;git dog]1;gitgit: 'dog' is not a git command. See 'git --help'.
 
-ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-
-# Check that setup has been run
-if [ ! -d "$ROOT_DIR/backend/.venv" ]; then
-  echo "ERROR: Backend venv not found. Run ./scripts/dev-setup.sh first."
-  exit 1
-fi
-
-# Ensure DB is running
-docker compose -f "$ROOT_DIR/docker-compose.yml" up -d
-
-BACKEND_PID=""
-FRONTEND_PID=""
-
-cleanup() {
-  echo ""
-  echo "Shutting down..."
-  [ -n "$BACKEND_PID" ] && kill "$BACKEND_PID" 2>/dev/null || true
-  [ -n "$FRONTEND_PID" ] && kill "$FRONTEND_PID" 2>/dev/null || true
-  wait 2>/dev/null || true
-}
-trap cleanup EXIT INT TERM
-
-# Start backend
-echo "==> Starting backend on http://localhost:8001"
-cd "$ROOT_DIR/backend"
-source .venv/bin/activate
-uvicorn app.main:app --reload --port 8001 &
-BACKEND_PID=$!
-
-# Start frontend
-echo "==> Starting frontend on http://localhost:5173"
-cd "$ROOT_DIR/frontend"
-npx vite --host &
-FRONTEND_PID=$!
-
-echo ""
-echo "App is running!"
-echo "  Frontend: http://localhost:5173"
-echo "  Backend:  http://localhost:8001"
-echo "  API Docs: http://localhost:8001/docs"
-echo ""
-echo "Press Ctrl+C to stop."
-
-wait
+The most similar command is
+	adog
+[1m[7m%[27m[1m[0m                                                                                            ]2;eclipse@pop-os:~/Documents/PersonalProjects/mama-budget]1;..s/mama-budget]7;file://pop-os/home/eclipse/Documents/PersonalProjects/mama-budget\[0m[27m[24m[J]0;eclipse@pop-os:~/Documents/PersonalProjects/mama-budget | 92x14 | pts/18[1m[36m┌─[1m[30m([1m[32m~/Documents/PersonalProjects/mama-budget[1m[30m)[1m[36m──────────────────────[1m[30m([1m[36meclipse[1m[30m@[1m[32mpop-os:pts/18[1m[30m)[1m[36m─┐
+[1m[36m└[1m[34m─([1m[33m16:50:41[34m[00m on [32mmain[00m[34m ✹[36m ✭[1m[34m)[1m[36m──>(B[m [K[43C [31m1 ↵ [00m[1m[36m─[1m[34m─([1m[33mMon,May18[1m[34m)─[1m[36m┘(B[m[63D[?1h=[?2004hggit a dog   dog[?1l>[?2004l
+]2;git adog]1;git[?1049h[22;0;0t[?1h=* [33m2fd4e4a[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m ✨ feat: add budget detail page with stats, charts, an[m [33m[m[33m[m[1;36m[m[1;32m[m[33m[m[1;31m[m[33m[md expense list[m
+* [33m88515f1[m 🐛 fix: resolve 422 on expense update caused by date type shadowing[m
+* [33m7b56fd3[m 🔢 fix: round all currency conversions to 2 decimal places[m
+* [33m67aa8f0[m 🌱 fix: seed missing default categories for all users[m
+* [33m58bfb31[m ✨ feat: show dual currency on budgets and add budget selector[m
+* [33m0875343[m 🌱 fix: seed default categories for existing users[m
+* [33mfef4847[m 🐛 fix: resolve expense edit form issues[m

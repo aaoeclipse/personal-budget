@@ -1,4 +1,5 @@
 import { Card, Group, Stack, Text } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import type { SpendingByCategory } from '../../types/api';
 import { formatCurrency } from '../../utils/formatCurrency';
@@ -10,6 +11,8 @@ interface SpendingByCategoryChartProps {
 const FALLBACK_COLORS = ['#FF6B6B', '#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#00BCD4', '#E91E63', '#607D8B'];
 
 export function SpendingByCategoryChart({ data }: SpendingByCategoryChartProps) {
+  const isMobile = useMediaQuery('(max-width: 768px)');
+
   if (!data || data.length === 0) return null;
 
   // Filter out invalid entries and ensure all fields are present
@@ -24,48 +27,53 @@ export function SpendingByCategoryChart({ data }: SpendingByCategoryChartProps) 
   if (validData.length === 0) return null;
 
   const total = validData.reduce((sum, d) => sum + d.value, 0);
+  const chartHeight = isMobile ? 200 : 220;
+  const outerRadius = isMobile ? 80 : 90;
+  const innerRadius = isMobile ? 45 : 55;
 
   return (
-    <Card shadow="xs" padding="md" radius="md" withBorder>
-      <Text fw={600} mb="sm">
-        Spending by Category
-      </Text>
-      <ResponsiveContainer width="100%" height={200}>
-        <PieChart>
-          <Pie
-            data={validData}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            innerRadius={45}
-            outerRadius={80}
-            paddingAngle={2}
-          >
-            {validData.map((entry, index) => (
-              <Cell key={index} fill={entry.color} />
-            ))}
-          </Pie>
-          <Tooltip
-            formatter={(value: number) => formatCurrency(value)}
-            contentStyle={{ borderRadius: 8, fontSize: '0.85rem' }}
-          />
-        </PieChart>
-      </ResponsiveContainer>
-      {/* Legend below */}
-      <Stack gap={4} mt="xs">
-        {validData.map((entry, index) => {
-          const pct = total > 0 ? Math.round((entry.value / total) * 100) : 0;
-          return (
-            <Group key={index} justify="space-between" gap="xs">
-              <Group gap="xs">
-                <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: entry.color, flexShrink: 0 }} />
-                <Text size="xs">{entry.name}</Text>
+    <Card shadow="xs" padding="md" radius="md" withBorder h="100%">
+      <Stack gap="xs" h="100%">
+        <Text fw={600}>
+          Spending by Category
+        </Text>
+        <ResponsiveContainer width="100%" height={chartHeight}>
+          <PieChart>
+            <Pie
+              data={validData}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              innerRadius={innerRadius}
+              outerRadius={outerRadius}
+              paddingAngle={2}
+            >
+              {validData.map((entry, index) => (
+                <Cell key={index} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip
+              formatter={(value: number) => formatCurrency(value)}
+              contentStyle={{ borderRadius: 8, fontSize: '0.85rem' }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+        {/* Legend below */}
+        <Stack gap={4}>
+          {validData.map((entry, index) => {
+            const pct = total > 0 ? Math.round((entry.value / total) * 100) : 0;
+            return (
+              <Group key={index} justify="space-between" gap="xs">
+                <Group gap="xs">
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: entry.color, flexShrink: 0 }} />
+                  <Text size="xs">{entry.name}</Text>
+                </Group>
+                <Text size="xs" c="dimmed">{formatCurrency(entry.value)} ({pct}%)</Text>
               </Group>
-              <Text size="xs" c="dimmed">{formatCurrency(entry.value)} ({pct}%)</Text>
-            </Group>
-          );
-        })}
+            );
+          })}
+        </Stack>
       </Stack>
     </Card>
   );

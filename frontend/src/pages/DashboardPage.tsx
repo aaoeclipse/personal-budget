@@ -1,10 +1,11 @@
-import { Card, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Card, Grid, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '../api/dashboard';
 import { BudgetAlertsBanner } from '../components/dashboard/BudgetAlertsBanner';
 import { BudgetComparisonChart } from '../components/dashboard/MonthlySpendingChart';
 import { BudgetOverviewCard } from '../components/dashboard/BudgetOverviewCard';
+import { DailySpendingChart } from '../components/dashboard/DailySpendingChart';
 import { InvitationsBanner } from '../components/dashboard/InvitationsBanner';
 import { RecentExpensesList } from '../components/dashboard/RecentExpensesList';
 import { SpendingByCategoryChart } from '../components/dashboard/SpendingByCategoryChart';
@@ -30,6 +31,11 @@ export function DashboardPage() {
     })
     .reduce((sum, e) => sum + Number(e.amount), 0) ?? 0;
 
+  // Calculate daily average from last 30 days
+  const dailyAvg = data?.daily_spending && data.daily_spending.length > 0
+    ? data.daily_spending.reduce((sum, d) => sum + Number(d.total), 0) / data.daily_spending.length
+    : 0;
+
   return (
     <Stack gap={isMobile ? 'sm' : 'md'}>
       <Title order={2} size={isMobile ? 'h3' : 'h2'}>Hey, {user?.name}!</Title>
@@ -40,7 +46,8 @@ export function DashboardPage() {
         <>
           <BudgetAlertsBanner budgets={data.active_budgets} />
 
-          <SimpleGrid cols={3} spacing={isMobile ? 'xs' : 'md'}>
+          {/* Stat cards — 4 on desktop, 2x2 on mobile */}
+          <SimpleGrid cols={{ base: 2, md: 4 }} spacing={isMobile ? 'xs' : 'md'}>
             <Card shadow="xs" padding={isMobile ? 'xs' : 'md'} radius="md" withBorder>
               <Text size="xs" c="dimmed">
                 Spent (30d)
@@ -59,7 +66,15 @@ export function DashboardPage() {
             </Card>
             <Card shadow="xs" padding={isMobile ? 'xs' : 'md'} radius="md" withBorder>
               <Text size="xs" c="dimmed">
-                Budgets
+                Daily Avg
+              </Text>
+              <Text size={isMobile ? 'md' : 'xl'} fw={700} c="violet">
+                {formatCurrency(Math.round(dailyAvg * 100) / 100)}
+              </Text>
+            </Card>
+            <Card shadow="xs" padding={isMobile ? 'xs' : 'md'} radius="md" withBorder>
+              <Text size="xs" c="dimmed">
+                Active Budgets
               </Text>
               <Text size={isMobile ? 'md' : 'xl'} fw={700} c="teal">
                 {data.active_budgets.length}
@@ -67,23 +82,47 @@ export function DashboardPage() {
             </Card>
           </SimpleGrid>
 
-          {data.active_budgets.length > 0 && (
-            <>
-              <BudgetComparisonChart budgets={data.active_budgets} />
-
-              <Title order={4}>Active Budgets</Title>
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-                {data.active_budgets.map((b) => (
-                  <BudgetOverviewCard key={b.id} budget={b} />
-                ))}
-              </SimpleGrid>
-            </>
+          {/* Daily spending chart — full width */}
+          {data.daily_spending.length > 0 && (
+            <DailySpendingChart data={data.daily_spending} />
           )}
 
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+          {/* Budget vs Spent + Category chart side by side on desktop */}
+          {data.active_budgets.length > 0 && (
+            <Grid gutter="md">
+              <Grid.Col span={{ base: 12, md: 7 }}>
+                <BudgetComparisonChart budgets={data.active_budgets} />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 5 }}>
+                <SpendingByCategoryChart data={data.spending_by_category} />
+              </Grid.Col>
+            </Grid>
+          )}
+
+          {/* If no active budgets, show category chart full width */}
+          {data.active_budgets.length === 0 && data.spending_by_category.length > 0 && (
             <SpendingByCategoryChart data={data.spending_by_category} />
-            <RecentExpensesList expenses={data.recent_expenses} />
-          </SimpleGrid>
+          )}
+
+          {/* Active budgets + Recent expenses side by side on desktop */}
+          <Grid gutter="md">
+            {data.active_budgets.length > 0 && (
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <Stack gap="sm">
+                  <Group justify="space-between" align="center">
+                    <Title order={4}>Active Budgets</Title>
+                    <Text size="xs" c="dimmed">{data.active_budgets.length} budget{data.active_budgets.length !== 1 ? 's' : ''}</Text>
+                  </Group>
+                  {data.active_budgets.map((b) => (
+                    <BudgetOverviewCard key={b.id} budget={b} />
+                  ))}
+                </Stack>
+              </Grid.Col>
+            )}
+            <Grid.Col span={{ base: 12, md: data.active_budgets.length > 0 ? 6 : 12 }}>
+              <RecentExpensesList expenses={data.recent_expenses} />
+            </Grid.Col>
+          </Grid>
         </>
       )}
     </Stack>
