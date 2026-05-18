@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Badge,
-  Button,
   Card,
   Grid,
   Group,
@@ -48,7 +47,6 @@ export function BudgetDetailPage() {
   const isOwner = budget.role === 'owner';
   const pct = budget.amount > 0 ? (budget.total_spent / budget.amount) * 100 : 0;
   const progressColor = pct >= 100 ? 'red' : pct >= 75 ? 'yellow' : 'teal';
-  const usdToGtq = 7.7;
 
   return (
     <Stack gap={isMobile ? 'sm' : 'md'}>
