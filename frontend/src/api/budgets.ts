@@ -1,4 +1,4 @@
-import type { Budget, BudgetCreate, BudgetDetail, BudgetMember, BudgetUpdate } from '../types/budget';
+import type { Budget, BudgetCreate, BudgetDetail, BudgetMember, BudgetStats, BudgetUpdate } from '../types/budget';
 import api from './client';
 
 export const budgetsApi = {
@@ -8,6 +8,8 @@ export const budgetsApi = {
   create: (data: BudgetCreate) => api.post<Budget>('/budgets', data).then((r) => r.data),
 
   get: (id: string) => api.get<BudgetDetail>(`/budgets/${id}`).then((r) => r.data),
+
+  getStats: (id: string) => api.get<BudgetStats>(`/budgets/${id}/stats`).then((r) => r.data),
 
   update: (id: string, data: BudgetUpdate) => api.put<Budget>(`/budgets/${id}`, data).then((r) => r.data),
 

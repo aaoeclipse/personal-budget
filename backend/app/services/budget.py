@@ -11,7 +11,16 @@ from app.exceptions import Forbidden, NotFound
 from app.models.budget import Budget
 from app.models.budget_member import BudgetMember
 from app.models.expense import Expense
-from app.schemas.budget import BudgetCreate, BudgetDetailResponse, BudgetResponse, BudgetUpdate
+from app.models.category import Category
+from app.schemas.budget import (
+    BudgetCategorySpending,
+    BudgetCreate,
+    BudgetDailySpending,
+    BudgetDetailResponse,
+    BudgetResponse,
+    BudgetStatsResponse,
+    BudgetUpdate,
+)
 
 # Conversion rate: 1 USD = 7.7 GTQ
 GTQ_TO_USD = Decimal("0.1298701298701299")  # 1/7.7
@@ -112,6 +121,121 @@ def update_budget(db: Session, user_id: uuid.UUID, budget_id: uuid.UUID, data: B
     db.commit()
     db.refresh(budget)
     return budget
+
+
+def get_budget_stats(db: Session, user_id: uuid.UUID, budget_id: uuid.UUID) -> BudgetStatsResponse:
+    budget = db.get(Budget, budget_id)
+    if not budget:
+        raise NotFound("Budget not found")
+
+    # Check access: owner or member
+    if budget.user_id != user_id:
+        role = _get_member_role(db, budget_id, user_id)
+        if not role:
+            raise Forbidden()
+
+    # Amount expression for a single expense converted to USD (no sum/coalesce)
+    amount_in_usd = case(
+        (Expense.currency == "GTQ", Expense.amount * GTQ_TO_USD),
+        else_=Expense.amount,
+    )
+
+    # Total spent
+    total_spent = db.execute(
+        select(_spent_in_usd_expr()).where(Expense.budget_id == budget_id)
+    ).scalar_one()
+    total_spent = Decimal(str(total_spent)).quantize(Decimal("0.01"))
+
+    budget_amount = Decimal(str(budget.amount))
+    remaining = budget_amount - total_spent
+
+    # Time stats
+    today = date.today()
+    start = budget.start_date
+    end = budget.end_date
+    days_total = (end - start).days + 1
+    # Clamp elapsed to budget range
+    if today < start:
+        days_elapsed = 0
+    elif today > end:
+        days_elapsed = days_total
+    else:
+        days_elapsed = (today - start).days + 1
+    days_remaining = max(0, days_total - days_elapsed)
+
+    # Pace stats
+    if days_remaining > 0:
+        daily_allowance = (remaining / days_remaining).quantize(Decimal("0.01"))
+    else:
+        daily_allowance = Decimal("0")
+
+    if days_elapsed > 0:
+        avg_daily = (total_spent / days_elapsed).quantize(Decimal("0.01"))
+        projected = (avg_daily * days_total).quantize(Decimal("0.01"))
+    else:
+        avg_daily = Decimal("0")
+        projected = Decimal("0")
+
+    on_track = projected <= budget_amount
+
+    # Category breakdown
+    cat_rows = db.execute(
+        select(
+            Category.name,
+            Category.color,
+            Category.emoji,
+            func.sum(amount_in_usd).label("total"),
+        )
+        .join(Category, Expense.category_id == Category.id)
+        .where(Expense.budget_id == budget_id)
+        .group_by(Category.id, Category.name, Category.color, Category.emoji)
+        .order_by(func.sum(amount_in_usd).desc())
+    ).all()
+
+    spending_by_category = []
+    for row in cat_rows:
+        cat_total = Decimal(str(row.total)).quantize(Decimal("0.01"))
+        pct = (cat_total / total_spent * 100).quantize(Decimal("0.01")) if total_spent > 0 else Decimal("0")
+        spending_by_category.append(
+            BudgetCategorySpending(
+                category_name=row.name,
+                category_color=row.color,
+                category_emoji=row.emoji,
+                total=cat_total,
+                percentage=pct,
+            )
+        )
+
+    # Daily spending
+    daily_rows = db.execute(
+        select(
+            Expense.date.label("date"),
+            func.sum(amount_in_usd).label("total"),
+        )
+        .where(Expense.budget_id == budget_id)
+        .group_by(Expense.date)
+        .order_by(Expense.date)
+    ).all()
+
+    daily_spending = [
+        BudgetDailySpending(
+            date=row.date,
+            total=Decimal(str(row.total)).quantize(Decimal("0.01")),
+        )
+        for row in daily_rows
+    ]
+
+    return BudgetStatsResponse(
+        days_total=days_total,
+        days_elapsed=days_elapsed,
+        days_remaining=days_remaining,
+        daily_allowance=daily_allowance,
+        avg_daily_spending=avg_daily,
+        projected_total=projected,
+        on_track=on_track,
+        spending_by_category=spending_by_category,
+        daily_spending=daily_spending,
+    )
 
 
 def delete_budget(db: Session, user_id: uuid.UUID, budget_id: uuid.UUID) -> None:

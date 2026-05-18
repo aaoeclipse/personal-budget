@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models.user import User
-from app.schemas.budget import BudgetCreate, BudgetDetailResponse, BudgetResponse, BudgetUpdate
+from app.schemas.budget import BudgetCreate, BudgetDetailResponse, BudgetResponse, BudgetStatsResponse, BudgetUpdate
 from app.schemas.budget_member import BudgetMemberResponse, InviteMemberRequest
 from app.services import budget as budget_service
 from app.services import budget_member as member_service
@@ -34,6 +34,11 @@ def create_budget(data: BudgetCreate, user: User = Depends(get_current_user), db
 @router.get("/{budget_id}", response_model=BudgetDetailResponse)
 def get_budget(budget_id: uuid.UUID, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return budget_service.get_budget_detail(db, user.id, budget_id)
+
+
+@router.get("/{budget_id}/stats", response_model=BudgetStatsResponse)
+def get_budget_stats(budget_id: uuid.UUID, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return budget_service.get_budget_stats(db, user.id, budget_id)
 
 
 @router.put("/{budget_id}", response_model=BudgetResponse)

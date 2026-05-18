@@ -1,5 +1,6 @@
 import { ActionIcon, Badge, Card, Group, Progress, Stack, Text } from '@mantine/core';
 import { IconEdit, IconTrash, IconUsers } from '@tabler/icons-react';
+import { useNavigate } from 'react-router';
 import type { Budget } from '../../types/budget';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDate } from '../../utils/formatDate';
@@ -12,13 +13,14 @@ interface BudgetCardProps {
 }
 
 export function BudgetCard({ budget, onEdit, onDelete, onMembers }: BudgetCardProps) {
+  const navigate = useNavigate();
   const spent = budget.total_spent ?? 0;
   const pct = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
   const color = pct >= 90 ? 'red' : pct >= 70 ? 'yellow' : 'teal';
   const isOwner = budget.role === 'owner';
 
   return (
-    <Card shadow="xs" padding="md" radius="md" withBorder>
+    <Card shadow="xs" padding="md" radius="md" withBorder style={{ cursor: 'pointer' }} onClick={() => navigate(`/budgets/${budget.id}`)}>
       <Stack gap="xs">
         <Group justify="space-between">
           <Group gap="xs">
@@ -31,16 +33,16 @@ export function BudgetCard({ budget, onEdit, onDelete, onMembers }: BudgetCardPr
           </Group>
           <Group gap={4}>
             {onMembers && (
-              <ActionIcon variant="subtle" color="blue" onClick={onMembers} title="Members">
+              <ActionIcon variant="subtle" color="blue" onClick={(e) => { e.stopPropagation(); onMembers(); }} title="Members">
                 <IconUsers size={16} />
               </ActionIcon>
             )}
             {isOwner && (
               <>
-                <ActionIcon variant="subtle" color="gray" onClick={onEdit}>
+                <ActionIcon variant="subtle" color="gray" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
                   <IconEdit size={16} />
                 </ActionIcon>
-                <ActionIcon variant="subtle" color="red" onClick={onDelete}>
+                <ActionIcon variant="subtle" color="red" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
                   <IconTrash size={16} />
                 </ActionIcon>
               </>

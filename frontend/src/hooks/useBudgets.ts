@@ -10,6 +10,10 @@ export function useBudget(id: string) {
   return useQuery({ queryKey: ['budgets', id], queryFn: () => budgetsApi.get(id), enabled: !!id });
 }
 
+export function useBudgetStats(id: string) {
+  return useQuery({ queryKey: ['budgets', id, 'stats'], queryFn: () => budgetsApi.getStats(id), enabled: !!id });
+}
+
 export function useCreateBudget() {
   const qc = useQueryClient();
   return useMutation({

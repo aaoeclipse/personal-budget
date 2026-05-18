@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router';
 import { AppLayout } from './components/layout/AppLayout';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
+import { BudgetDetailPage } from './pages/BudgetDetailPage';
 import { BudgetsPage } from './pages/BudgetsPage';
 import { CategoriesPage } from './pages/CategoriesPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -23,6 +24,7 @@ export default function App() {
       >
         <Route path="/" element={<DashboardPage />} />
         <Route path="/budgets" element={<BudgetsPage />} />
+        <Route path="/budgets/:id" element={<BudgetDetailPage />} />
         <Route path="/expenses" element={<ExpensesPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
       </Route>

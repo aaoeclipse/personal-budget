@@ -3,7 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class BudgetCreate(BaseModel):
@@ -40,3 +40,32 @@ class BudgetDetailResponse(BudgetResponse):
     total_spent_gtq: Decimal = Decimal("0")
     remaining: Decimal
     amount_gtq: Decimal = Decimal("0")
+
+
+class BudgetCategorySpending(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    category_name: str
+    category_color: str
+    category_emoji: Optional[str] = None
+    total: Decimal
+    percentage: Decimal
+
+
+class BudgetDailySpending(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    date: date
+    total: Decimal
+
+
+class BudgetStatsResponse(BaseModel):
+    days_total: int
+    days_elapsed: int
+    days_remaining: int
+    daily_allowance: Decimal
+    avg_daily_spending: Decimal
+    projected_total: Decimal
+    on_track: bool
+    spending_by_category: list[BudgetCategorySpending]
+    daily_spending: list[BudgetDailySpending]
