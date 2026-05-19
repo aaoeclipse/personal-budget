@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import case, func, or_, select
 from sqlalchemy.orm import Session
@@ -123,7 +124,7 @@ def update_budget(db: Session, user_id: uuid.UUID, budget_id: uuid.UUID, data: B
     return budget
 
 
-def get_budget_stats(db: Session, user_id: uuid.UUID, budget_id: uuid.UUID) -> BudgetStatsResponse:
+def get_budget_stats(db: Session, user_id: uuid.UUID, budget_id: uuid.UUID, timezone: str | None = None) -> BudgetStatsResponse:
     budget = db.get(Budget, budget_id)
     if not budget:
         raise NotFound("Budget not found")
@@ -149,8 +150,14 @@ def get_budget_stats(db: Session, user_id: uuid.UUID, budget_id: uuid.UUID) -> B
     budget_amount = Decimal(str(budget.amount))
     remaining = budget_amount - total_spent
 
-    # Time stats
-    today = date.today()
+    # Time stats — use the client's timezone so "today" matches the user's local date
+    if timezone:
+        try:
+            today = datetime.now(ZoneInfo(timezone)).date()
+        except (KeyError, ValueError):
+            today = date.today()
+    else:
+        today = date.today()
     start = budget.start_date
     end = budget.end_date
     days_total = (end - start).days + 1

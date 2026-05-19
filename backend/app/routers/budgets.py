@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Header, Query
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -37,8 +37,13 @@ def get_budget(budget_id: uuid.UUID, user: User = Depends(get_current_user), db:
 
 
 @router.get("/{budget_id}/stats", response_model=BudgetStatsResponse)
-def get_budget_stats(budget_id: uuid.UUID, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return budget_service.get_budget_stats(db, user.id, budget_id)
+def get_budget_stats(
+    budget_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    x_timezone: Optional[str] = Header(None),
+):
+    return budget_service.get_budget_stats(db, user.id, budget_id, timezone=x_timezone)
 
 
 @router.put("/{budget_id}", response_model=BudgetResponse)
